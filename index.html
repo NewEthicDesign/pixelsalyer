@@ -51,10 +51,11 @@
             bottom: 20px;
             left: 0;
             right: 0;
-            display: none;
+            display: flex;
             justify-content: space-between;
             padding: 0 20px;
             pointer-events: none;
+            z-index: 1000;
         }
         .controlGroup {
             display: flex;
@@ -107,11 +108,13 @@
                 font-size: 24px;
                 margin: 10px 0;
             }
-            #mobileControls {
-                display: flex;
-            }
             #instructions {
                 font-size: 12px;
+            }
+        }
+        @media (min-width: 769px) {
+            #mobileControls {
+                display: none;
             }
         }
     </style>
