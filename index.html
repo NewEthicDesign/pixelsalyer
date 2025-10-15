@@ -1,1 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Slayer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #1a1a2e;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        #gameCanvas {
+            border: 3px solid #00ff88;
+            background: #2a2a4e;
+        }
+        #ui {
+            margin-top: 15px;
+            display: flex;
+            gap: 30px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .stat {
+            background: #16213e;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: 2px solid #00ff88;
+        }
+        #instructions {
+            margin-top: 15px;
+            text-align: center;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <h1>PIXEL SLAYER</h1>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="ui">
+        <div class="stat">Orcs: <span id="score">0</span></div>
+        <div class="stat">Level: <span id="level">1</span></div>
+        <div class="stat">Swords: <span id="swords">0</span></div>
+        <div class="stat">Axes: <span id="axes">0</span></div>
+        <div class="stat">Health: <span id="health">100</span></div>
+    </div>
+    <div id="instructions">
+        ARROW KEYS to move - SPACE to attack - R to restart
+    </div>
 
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const game = {
+            score: 0,
+            swords: 0,
+            axes: 0,
+            health: 100,
+            running: false,
+            started: false,
+            level: 1,
+            maxLevel: 3,
+            orcsPerLevel: 10,
+            gameWon: false
+        };
+
+        const player = {
+            x: 100,
+            y: 300,
+            width: 30,
+            height: 40,
+            speed: 5,
+            velocityY: 0,
+            jumping: false,
+            attacking: false,
+            attackTimer: 0,
+            facing: 1
+        };
+
+        const keys = {};
+        const orcs = [];
+        let orcSpawnTimer = 0;
+        const weapons = [];
+        const ground = canvas.height - 50;
+
+        document.addEventListener('keydown', function(e) {
+            keys[e.code] = true;
+            
+            if (e.code === 'Space') {
+                if (!game.started) {
+                    game.started = true;
+                    game.running = true;
+                } else if (!player.attacking && game.running) {
+                    player.attacking = true;
+                    player.attackTimer = 15;
+                }
+            }
+            
+            if (e.code === 'KeyR') {
+                location.reload();
+            }
+        });
+
+        document.addEventListener('keyup', function(e) {
+            keys[e.code] = false;
+        });
+
+        function spawnOrc() {
+            const sizeMultiplier = 1 + (game.level - 1) * 0.25;
+            orcs.push({
+                x: canvas.width + 50,
+                y: ground - (40 * sizeMultiplier),
+                width: 40 * sizeMultiplier,
+                height: 40 * sizeMultiplier,
+                speed: 2 + Math.random(),
+                health: 2,
+                level: game.level
+            });
+        }
+
+        function spawnWeapon(x, y) {
+            const type = Math.random() > 0.5 ? 'sword' : 'axe';
+            weapons.push({
+                x: x,
+                y: y,
+                type: type,
+                velocityY: -5,
+                gravity: 0.3
+            });
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = '#8b7355';
+            ctx.fillRect(player.x + 8, player.y + 28, 6, 12);
+            ctx.fillRect(player.x + 16, player.y + 28, 6, 12);
+            
+            ctx.fillStyle = '#4a4a4a';
+            ctx.fillRect(player.x + 5, player.y + 5, 20, 25);
+            
+            ctx.fillStyle = '#6a6a6a';
+            ctx.fillRect(player.x + 6, player.y + 6, 18, 3);
+            ctx.fillRect(player.x + 7, player.y + 12, 16, 2);
+            
+            ctx.fillStyle = '#5a5a5a';
+            ctx.fillRect(player.x + 2, player.y + 3, 7, 8);
+            ctx.fillRect(player.x + 21, player.y + 3, 7, 8);
+            
+            ctx.fillStyle = '#ffaa88';
+            ctx.fillRect(player.x + 8, player.y - 10, 14, 12);
+            
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(player.x + 6, player.y - 15, 18, 8);
+            
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 9, player.y - 11, 12, 3);
+            
+            ctx.fillStyle = '#5a5a5a';
+            ctx.fillRect(player.x + 7, player.y - 14, 3, 2);
+            
+            ctx.fillStyle = '#8b0000';
+            ctx.fillRect(player.x + 13, player.y - 18, 4, 4);
+            ctx.fillRect(player.x + 14, player.y - 20, 2, 3);
+
+            if (player.attacking) {
+                const swordX = player.x + (player.facing > 0 ? player.width : -45);
+                const swordY = player.y + 8;
+                
+                ctx.fillStyle = '#9a9a9a';
+                ctx.fillRect(swordX, swordY, 40, 8);
+                
+                ctx.fillStyle = '#c0c0c0';
+                ctx.fillRect(swordX, swordY + 1, 40, 2);
+                
+                ctx.fillStyle = '#b0b0b0';
+                ctx.beginPath();
+                ctx.moveTo(swordX + 40, swordY);
+                ctx.lineTo(swordX + 48, swordY + 4);
+                ctx.lineTo(swordX + 40, swordY + 8);
+                ctx.fill();
+                
+                ctx.fillStyle = '#6a5a3a';
+                ctx.fillRect(swordX - 3, swordY - 4, 6, 16);
+                
+                ctx.fillStyle = '#8a7a5a';
+                ctx.fillRect(swordX - 2, swordY - 3, 4, 2);
+                ctx.fillRect(swordX - 2, swordY + 9, 4, 2);
+                
+                ctx.fillStyle = '#5a3a1a';
+                ctx.fillRect(swordX - 12, swordY + 1, 10, 6);
+                
+                ctx.fillStyle = '#4a2a0a';
+                ctx.fillRect(swordX - 10, swordY + 2, 1, 4);
+                ctx.fillRect(swordX - 7, swordY + 2, 1, 4);
+                ctx.fillRect(swordX - 4, swordY + 2, 1, 4);
+                
+                ctx.fillStyle = '#8a7a5a';
+                ctx.fillRect(swordX - 15, swordY, 4, 8);
+                
+                ctx.fillStyle = 'rgba(255, 255, 100, 0.3)';
+                ctx.fillRect(swordX + 2, swordY - 2, 44, 12);
+            }
+        }
+
+        function drawOrc(orc) {
+            let bodyColor, headColor;
+            if (orc.level === 1) {
+                bodyColor = '#2d5016';
+                headColor = '#4a7c2c';
+            } else if (orc.level === 2) {
+                bodyColor = '#5a1a3a';
+                headColor = '#8a2a5a';
+            } else {
+                bodyColor = '#1a2a5a';
+                headColor = '#2a4a8a';
+            }
+            
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(orc.x, orc.y, orc.width, orc.height);
+            
+            ctx.fillStyle = headColor;
+            const headWidth = orc.width * 0.6;
+            const headHeight = orc.height * 0.45;
+            ctx.fillRect(orc.x + orc.width * 0.2, orc.y - headHeight, headWidth, headHeight);
+            
+            ctx.fillStyle = '#2a2a2a';
+            const hornHeight = orc.height * 0.3;
+            ctx.beginPath();
+            ctx.moveTo(orc.x + orc.width * 0.25, orc.y - headHeight);
+            ctx.lineTo(orc.x + orc.width * 0.2, orc.y - headHeight - hornHeight);
+            ctx.lineTo(orc.x + orc.width * 0.3, orc.y - headHeight);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(orc.x + orc.width * 0.7, orc.y - headHeight);
+            ctx.lineTo(orc.x + orc.width * 0.8, orc.y - headHeight - hornHeight);
+            ctx.lineTo(orc.x + orc.width * 0.75, orc.y - headHeight);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ff0000';
+            const eyeSize = orc.width * 0.12;
+            ctx.fillRect(orc.x + orc.width * 0.3, orc.y - headHeight * 0.6, eyeSize, eyeSize);
+            ctx.fillRect(orc.x + orc.width * 0.55, orc.y - headHeight * 0.6, eyeSize, eyeSize);
+            
+            ctx.fillStyle = '#ff6666';
+            const glowSize = eyeSize * 0.5;
+            ctx.fillRect(orc.x + orc.width * 0.32, orc.y - headHeight * 0.58, glowSize, glowSize);
+            ctx.fillRect(orc.x + orc.width * 0.57, orc.y - headHeight * 0.58, glowSize, glowSize);
+        }
+
+        function drawWeapon(weapon) {
+            if (weapon.type === 'sword') {
+                ctx.fillStyle = '#c0c0c0';
+                ctx.fillRect(weapon.x, weapon.y, 8, 20);
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(weapon.x + 1, weapon.y + 15, 6, 8);
+            } else {
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(weapon.x + 3, weapon.y + 10, 4, 15);
+                ctx.fillStyle = '#666';
+                ctx.beginPath();
+                ctx.moveTo(weapon.x, weapon.y + 5);
+                ctx.lineTo(weapon.x + 15, weapon.y + 5);
+                ctx.lineTo(weapon.x + 7, weapon.y + 15);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        function update() {
+            if (!game.running) return;
+
+            if (keys['ArrowLeft']) {
+                player.x -= player.speed;
+                player.facing = -1;
+            }
+            if (keys['ArrowRight']) {
+                player.x += player.speed;
+                player.facing = 1;
+            }
+            if (keys['ArrowUp'] && !player.jumping) {
+                player.velocityY = -12;
+                player.jumping = true;
+            }
+
+            player.velocityY += 0.5;
+            player.y += player.velocityY;
+
+            if (player.y >= ground - player.height) {
+                player.y = ground - player.height;
+                player.velocityY = 0;
+                player.jumping = false;
+            }
+
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+
+            if (player.attackTimer > 0) {
+                player.attackTimer--;
+                if (player.attackTimer === 0) {
+                    player.attacking = false;
+                }
+            }
+
+            orcSpawnTimer++;
+            if (orcSpawnTimer > 120) {
+                spawnOrc();
+                orcSpawnTimer = 0;
+            }
+
+            for (let i = orcs.length - 1; i >= 0; i--) {
+                const orc = orcs[i];
+                orc.x -= orc.speed;
+
+                if (checkCollision(player, orc)) {
+                    game.health -= 0.5;
+                    if (game.health <= 0) {
+                        game.running = false;
+                        alert('Game Over! Score: ' + game.score);
+                        location.reload();
+                    }
+                }
+
+                if (player.attacking && checkCollision(
+                    {x: player.x + (player.facing > 0 ? player.width : -48), y: player.y + 8, width: 48, height: 12},
+                    orc
+                )) {
+                    orc.health--;
+                    if (orc.health <= 0) {
+                        game.score++;
+                        spawnWeapon(orc.x + orc.width / 2, orc.y);
+                        orcs.splice(i, 1);
+                        
+                        if (game.score >= game.orcsPerLevel * game.level) {
+                            if (game.level < game.maxLevel) {
+                                game.level++;
+                                alert('Level ' + game.level + '! Orcs are getting bigger!');
+                            } else {
+                                game.running = false;
+                                game.gameWon = true;
+                            }
+                        }
+                    }
+                }
+
+                if (orc.x < -50) {
+                    orcs.splice(i, 1);
+                }
+            }
+
+            for (let i = weapons.length - 1; i >= 0; i--) {
+                const weapon = weapons[i];
+                weapon.velocityY += weapon.gravity;
+                weapon.y += weapon.velocityY;
+
+                if (weapon.y > ground - 20) {
+                    weapon.y = ground - 20;
+                    weapon.velocityY = 0;
+                }
+
+                if (checkCollision(player, {x: weapon.x, y: weapon.y, width: 15, height: 20})) {
+                    if (weapon.type === 'sword') {
+                        game.swords++;
+                    } else {
+                        game.axes++;
+                    }
+                    weapons.splice(i, 1);
+                }
+            }
+
+            document.getElementById('score').textContent = game.score;
+            document.getElementById('level').textContent = game.level;
+            document.getElementById('swords').textContent = game.swords;
+            document.getElementById('axes').textContent = game.axes;
+            document.getElementById('health').textContent = Math.max(0, Math.floor(game.health));
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 50; i++) {
+                const starX = (i * 47 + Date.now() * 0.01) % canvas.width;
+                const starY = (i * 67) % (canvas.height - 100);
+                ctx.fillRect(starX, starY, 2, 2);
+            }
+            
+            ctx.fillStyle = '#4a2a6a';
+            ctx.beginPath();
+            ctx.arc(650, 80, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#6a4a3a';
+            ctx.beginPath();
+            ctx.arc(150, 120, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#3d3d5c';
+            ctx.fillRect(0, ground, canvas.width, canvas.height - ground);
+            
+            ctx.strokeStyle = '#2a2a4a';
+            ctx.lineWidth = 2;
+            for (let y = ground; y < canvas.height; y += 20) {
+                for (let x = 0; x < canvas.width; x += 40) {
+                    ctx.strokeRect(x, y, 40, 20);
+                }
+            }
+            
+            const windowPositions = [
+                {x: 100, y: ground - 120},
+                {x: 300, y: ground - 150},
+                {x: 500, y: ground - 100},
+                {x: 650, y: ground - 140}
+            ];
+            
+            for (let p = 0; p < windowPositions.length; p++) {
+                const pos = windowPositions[p];
+                ctx.fillStyle = '#2a2a3a';
+                ctx.fillRect(pos.x - 5, pos.y - 5, 60, 80);
+                
+                ctx.fillStyle = '#0a0a1a';
+                ctx.fillRect(pos.x, pos.y, 50, 70);
+                
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 8; i++) {
+                    const sx = pos.x + (i * 13) % 45 + 2;
+                    const sy = pos.y + (i * 17) % 65 + 2;
+                    ctx.fillRect(sx, sy, 1, 1);
+                }
+                
+                ctx.fillStyle = '#1a1a2a';
+                ctx.fillRect(pos.x, pos.y + 33, 50, 4);
+                ctx.fillRect(pos.x + 23, pos.y, 4, 70);
+            }
+
+            for (let i = 0; i < weapons.length; i++) {
+                drawWeapon(weapons[i]);
+            }
+
+            for (let i = 0; i < orcs.length; i++) {
+                drawOrc(orcs[i]);
+            }
+
+            drawPlayer();
+
+            let weaponX = 10;
+            for (let i = 0; i < game.swords; i++) {
+                ctx.fillStyle = '#c0c0c0';
+                ctx.fillRect(weaponX, 10, 3, 10);
+                weaponX += 6;
+            }
+            weaponX = 10;
+            for (let i = 0; i < game.axes; i++) {
+                ctx.fillStyle = '#666';
+                ctx.fillRect(weaponX, 25, 5, 5);
+                weaponX += 8;
+            }
+            
+            if (game.gameWon) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#FFD700';
+                ctx.font = 'bold 60px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('YOU ARE THE', canvas.width / 2, canvas.height / 2 - 60);
+                ctx.fillText('PIXEL SLAYER!', canvas.width / 2, canvas.height / 2);
+                
+                ctx.fillStyle = '#00ff88';
+                ctx.font = 'bold 24px Arial';
+                ctx.fillText('All 3 Levels Completed!', canvas.width / 2, canvas.height / 2 + 60);
+                ctx.fillText('Total Orcs Defeated: ' + game.score, canvas.width / 2, canvas.height / 2 + 95);
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '20px Arial';
+                ctx.fillText('Press R to Restart', canvas.width / 2, canvas.height / 2 + 135);
+            }
+            
+            if (!game.started) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#FFD700';
+                ctx.font = 'bold 50px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('PIXEL SLAYER', canvas.width / 2, canvas.height / 2 - 40);
+                
+                ctx.fillStyle = '#00ff88';
+                ctx.font = 'bold 28px Arial';
+                ctx.fillText('Press SPACE to Start', canvas.width / 2, canvas.height / 2 + 40);
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '18px Arial';
+                ctx.fillText('Defeat 10 orcs per level - 3 Levels Total', canvas.width / 2, canvas.height / 2 + 85);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
