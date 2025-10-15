@@ -14,21 +14,28 @@
             background: #1a1a2e;
             font-family: Arial, sans-serif;
             color: #fff;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
         #gameCanvas {
             border: 3px solid #00ff88;
             background: #2a2a4e;
+            max-width: 100%;
+            height: auto;
         }
         #ui {
             margin-top: 15px;
             display: flex;
-            gap: 30px;
-            font-size: 18px;
+            gap: 15px;
+            font-size: 16px;
             font-weight: bold;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         .stat {
             background: #16213e;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 5px;
             border: 2px solid #00ff88;
         }
@@ -36,6 +43,76 @@
             margin-top: 15px;
             text-align: center;
             color: #aaa;
+            font-size: 14px;
+            padding: 0 10px;
+        }
+        #mobileControls {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: none;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+        }
+        .controlGroup {
+            display: flex;
+            gap: 10px;
+            pointer-events: all;
+        }
+        .mobileBtn {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 255, 136, 0.3);
+            border: 3px solid #00ff88;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .mobileBtn:active {
+            background: rgba(0, 255, 136, 0.6);
+            transform: scale(0.95);
+        }
+        .mobileBtn.jump {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #FFD700;
+        }
+        .mobileBtn.jump:active {
+            background: rgba(255, 215, 0, 0.6);
+        }
+        .mobileBtn.attack {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 0, 0, 0.3);
+            border-color: #ff0000;
+        }
+        .mobileBtn.attack:active {
+            background: rgba(255, 0, 0, 0.6);
+        }
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 24px;
+                margin: 10px 0;
+            }
+            #mobileControls {
+                display: flex;
+            }
+            #instructions {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -94,6 +171,13 @@
         let showVictoryRain = false;
         let victoryRainTimer = 0;
         const ground = canvas.height - 50;
+        
+        const mobileControls = {
+            left: false,
+            right: false,
+            jump: false,
+            attack: false
+        };
 
         document.addEventListener('keydown', function(e) {
             keys[e.code] = true;
@@ -120,6 +204,60 @@
 
         document.addEventListener('keyup', function(e) {
             keys[e.code] = false;
+        });
+
+        function setupMobileControls() {
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const jumpBtn = document.getElementById('jumpBtn');
+            const attackBtn = document.getElementById('attackBtn');
+
+            if (!leftBtn || !rightBtn || !jumpBtn || !attackBtn) return;
+
+            leftBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                mobileControls.left = true;
+            });
+            leftBtn.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                mobileControls.left = false;
+            });
+
+            rightBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                mobileControls.right = true;
+            });
+            rightBtn.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                mobileControls.right = false;
+            });
+
+            jumpBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                if (!game.started) {
+                    game.started = true;
+                    game.running = true;
+                } else if (!player.jumping && game.running && !game.paused) {
+                    player.velocityY = -12;
+                    player.jumping = true;
+                }
+            });
+
+            attackBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                if (!game.started) {
+                    game.started = true;
+                    game.running = true;
+                } else if (!player.attacking && game.running && !game.paused) {
+                    player.attacking = true;
+                    player.attackTimer = 15;
+                }
+            });
+        }
+
+        window.addEventListener('load', function() {
+            setupMobileControls();
+            gameLoop();
         });
 
         function spawnOrc() {
@@ -395,15 +533,15 @@
         function update() {
             if (!game.running || game.paused) return;
 
-            if (keys['ArrowLeft']) {
+            if (keys['ArrowLeft'] || mobileControls.left) {
                 player.x -= player.speed;
                 player.facing = -1;
             }
-            if (keys['ArrowRight']) {
+            if (keys['ArrowRight'] || mobileControls.right) {
                 player.x += player.speed;
                 player.facing = 1;
             }
-            if (keys['ArrowUp'] && !player.jumping) {
+            if ((keys['ArrowUp'] || mobileControls.jump) && !player.jumping) {
                 player.velocityY = -12;
                 player.jumping = true;
             }
@@ -427,10 +565,10 @@
             }
 
             orcSpawnTimer++;
-            if (orcSpawnTimer > 120) {
-                if (game.score >= game.orcsPerLevel * game.level - 1 && !game.bossSpawned && orcs.length === 0) {
+            if (orcSpawnTimer > 120 && !game.bossSpawned) {
+                if (game.score >= game.orcsPerLevel * game.level - 1 && orcs.length === 0) {
                     spawnBoss();
-                } else if (!game.bossSpawned) {
+                } else {
                     spawnOrc();
                 }
                 orcSpawnTimer = 0;
@@ -707,8 +845,6 @@
             draw();
             requestAnimationFrame(gameLoop);
         }
-
-        gameLoop();
     </script>
 </body>
 </html>
