@@ -4,536 +4,1303 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pixel Slayer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: #1a1a2e;
-            font-family: Arial, sans-serif;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a0a0a 50%, #0a0000 100%);
+            font-family: 'Press Start 2P', cursive;
             color: #fff;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
+            padding: 20px;
         }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #fff;
+            text-shadow: 
+                3px 3px 0px #8b0000,
+                6px 6px 0px #600000,
+                2px 2px 10px #ff0000,
+                0 0 20px rgba(255, 0, 0, 0.5);
+            letter-spacing: 4px;
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { 
+                text-shadow: 
+                    3px 3px 0px #8b0000,
+                    6px 6px 0px #600000,
+                    2px 2px 10px #ff0000,
+                    0 0 20px rgba(255, 0, 0, 0.5); 
+            }
+            50% { 
+                text-shadow: 
+                    3px 3px 0px #8b0000,
+                    6px 6px 0px #600000,
+                    2px 2px 15px #ff0000,
+                    0 0 30px rgba(255, 0, 0, 0.8); 
+            }
+        }
+
         #gameCanvas {
-            border: 3px solid #00ff88;
-            background: #2a2a4e;
+            border: 6px solid #8b0000;
+            background: #1a1a2e;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            box-shadow: 
+                0 0 20px rgba(139, 0, 0, 0.6),
+                inset 0 0 30px rgba(0, 0, 0, 0.8);
+            touch-action: none;
             max-width: 100%;
             height: auto;
+            display: block;
         }
+
         #ui {
-            margin-top: 15px;
+            margin-top: 20px;
             display: flex;
             gap: 15px;
-            font-size: 16px;
-            font-weight: bold;
+            font-size: 12px;
             flex-wrap: wrap;
             justify-content: center;
         }
+
         .stat {
-            background: #16213e;
-            padding: 8px 15px;
-            border-radius: 5px;
-            border: 2px solid #00ff88;
+            background: linear-gradient(135deg, #1a0000 0%, #0a0000 100%);
+            padding: 12px 18px;
+            border-radius: 0;
+            border: 3px solid #8b0000;
+            box-shadow: 
+                0 0 10px rgba(139, 0, 0, 0.5),
+                inset 0 0 10px rgba(0, 0, 0, 0.5);
+            color: #ff3333;
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
         }
+
+        .stat span {
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        }
+
         #instructions {
-            margin-top: 15px;
+            margin-top: 20px;
             text-align: center;
-            color: #aaa;
-            font-size: 14px;
-            padding: 0 10px;
+            color: #999;
+            font-size: 10px;
+            line-height: 18px;
+            max-width: 800px;
         }
+
+        .unlock {
+            color: #ffaa00;
+            text-shadow: 0 0 8px rgba(255, 170, 0, 0.8);
+        }
+
         #mobileControls {
+            display: none;
             position: fixed;
             bottom: 20px;
             left: 0;
             right: 0;
-            display: flex;
-            justify-content: space-between;
             padding: 0 20px;
-            pointer-events: none;
-            z-index: 1000;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: flex-end;
         }
-        .controlGroup {
+
+        .control-group {
             display: flex;
             gap: 10px;
-            pointer-events: all;
         }
-        .mobileBtn {
-            width: 60px;
-            height: 60px;
-            background: rgba(0, 255, 136, 0.3);
-            border: 3px solid #00ff88;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 24px;
-            font-weight: bold;
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1a0000 0%, #0a0000 100%);
+            border: 3px solid #8b0000;
+            color: #ff3333;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            user-select: none;
-            touch-action: manipulation;
+            touch-action: none;
         }
-        .mobileBtn:active {
-            background: rgba(0, 255, 136, 0.6);
-            transform: scale(0.95);
+
+        .btn:active {
+            background: linear-gradient(135deg, #3a0000 0%, #2a0000 100%);
+            box-shadow: 0 0 20px rgba(139, 0, 0, 0.8);
         }
-        .mobileBtn.jump {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 215, 0, 0.3);
-            border-color: #FFD700;
+
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 3; }
+
+        .btn-action {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            font-size: 12px;
         }
-        .mobileBtn.jump:active {
-            background: rgba(255, 215, 0, 0.6);
+
+        @media (max-width: 850px) {
+            h1 { font-size: 32px; }
+            #ui { font-size: 10px; }
+            .stat { padding: 8px 12px; }
+            #mobileControls { display: flex; }
+            #instructions { margin-bottom: 180px; }
         }
-        .mobileBtn.attack {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 0, 0, 0.3);
-            border-color: #ff0000;
-        }
-        .mobileBtn.attack:active {
-            background: rgba(255, 0, 0, 0.6);
-        }
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            h1 {
+
+        @media (max-width: 600px) {
+            h1 { 
                 font-size: 24px;
-                margin: 10px 0;
+                margin-bottom: 10px;
+            }
+            #gameCanvas {
+                border: 4px solid #8b0000;
+            }
+            #ui { 
+                font-size: 8px;
+                gap: 8px;
+            }
+            .stat { 
+                padding: 6px 10px;
+                border: 2px solid #8b0000;
             }
             #instructions {
-                font-size: 12px;
+                font-size: 8px;
+                line-height: 14px;
+                padding: 0 10px;
             }
         }
-        @media (min-width: 769px) {
+
+        @media (max-width: 400px) {
+            h1 { 
+                font-size: 20px;
+                letter-spacing: 2px;
+            }
+            .dpad {
+                grid-template-columns: repeat(3, 50px);
+                grid-template-rows: repeat(3, 50px);
+                gap: 3px;
+            }
+            .btn {
+                font-size: 16px;
+            }
+            .btn-action {
+                width: 60px;
+                height: 60px;
+                font-size: 10px;
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 600px) {
             #mobileControls {
-                display: none;
+                bottom: 10px;
+                padding: 0 10px;
+            }
+            .dpad {
+                grid-template-columns: repeat(3, 50px);
+                grid-template-rows: repeat(3, 50px);
+            }
+            .btn-action {
+                width: 60px;
+                height: 60px;
             }
         }
     </style>
 </head>
 <body>
-    <h1>PIXEL SLAYER</h1>
+    <h1>⚔️ PIXEL SLAYER ⚔️</h1>
     <canvas id="gameCanvas" width="800" height="400"></canvas>
     <div id="ui">
-        <div class="stat">Orcs: <span id="score">0</span></div>
-        <div class="stat">Level: <span id="level">1</span></div>
-        <div class="stat">Swords: <span id="swords">0</span></div>
-        <div class="stat">Axes: <span id="axes">0</span></div>
-        <div class="stat">Health: <span id="health">100</span></div>
+        <div class="stat">KILLS <span id="score">0</span></div>
+        <div class="stat">LEVEL <span id="level">1</span></div>
+        <div class="stat">POTIONS <span id="potions">0</span></div>
+        <div class="stat">HP <span id="health">100</span></div>
     </div>
     <div id="instructions">
-        ARROW KEYS to move - SPACE to attack - R to restart - P to pause
+        ARROW KEYS - MOVE | SPACE - ATTACK | H - USE POTION | P - PAUSE | <span id="weaponSwitch"></span>R - RESTART<br>
+        DEFEAT 10 ORCS PER LEVEL!
     </div>
 
     <div id="mobileControls">
-        <div class="controlGroup">
-            <button class="mobileBtn" id="leftBtn">◀</button>
-            <button class="mobileBtn" id="rightBtn">▶</button>
+        <div class="control-group">
+            <div class="dpad">
+                <button class="btn btn-up" data-key="ArrowUp">▲</button>
+                <button class="btn btn-left" data-key="ArrowLeft">◄</button>
+                <button class="btn btn-right" data-key="ArrowRight">►</button>
+                <button class="btn btn-down" data-key="ArrowDown">▼</button>
+            </div>
         </div>
-        <div class="controlGroup">
-            <button class="mobileBtn jump" id="jumpBtn">↑</button>
-            <button class="mobileBtn attack" id="attackBtn">⚔</button>
+        <div class="control-group" style="flex-direction: column; gap: 10px;">
+            <button class="btn btn-action" data-key="Space">ATK</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-action" style="width: 60px; height: 60px; font-size: 10px;" data-key="KeyQ">SWAP</button>
+                <button class="btn btn-action" style="width: 60px; height: 60px; font-size: 10px;" data-key="KeyH">HEAL</button>
+            </div>
+            <button class="btn btn-action" style="width: 60px; height: 60px;" data-key="KeyP">⏸</button>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        'use strict';
+
+        const CANVAS = document.getElementById('gameCanvas');
+        const CTX = CANVAS.getContext('2d');
+        const GROUND = CANVAS.height - 50;
+        const GRAVITY = 0.5;
+        const JUMP_POWER = -12;
+        const PLAYER_SPEED = 5;
+        const ORC_SPAWN_RATE = 120;
+        const ATTACK_DURATION = 15;
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let musicPlaying = false;
+        let pauseMusicPlaying = false;
+        let currentNote = 0;
+        let musicInterval = null;
+        let bassInterval = null;
+        let currentBassNote = 0;
+        let padOscillator = null;
+        let padGain = null;
+        let pauseMusicInterval = null;
+        let arpeggioInterval = null;
+        let currentArpNote = 0;
+
+        const melody = [
+            {freq: 329.63, duration: 200}, {freq: 329.63, duration: 200}, {freq: 392.00, duration: 200},
+            {freq: 493.88, duration: 300}, {freq: 440.00, duration: 300}, {freq: 392.00, duration: 400},
+            {freq: 329.63, duration: 200}, {freq: 329.63, duration: 200}, {freq: 392.00, duration: 200},
+            {freq: 523.25, duration: 300}, {freq: 493.88, duration: 500},
+            {freq: 587.33, duration: 200}, {freq: 523.25, duration: 200}, {freq: 493.88, duration: 200},
+            {freq: 440.00, duration: 300}, {freq: 493.88, duration: 300}, {freq: 392.00, duration: 400},
+            {freq: 440.00, duration: 200}, {freq: 493.88, duration: 200}, {freq: 523.25, duration: 200},
+            {freq: 587.33, duration: 400}, {freq: 523.25, duration: 200}, {freq: 493.88, duration: 200},
+            {freq: 440.00, duration: 400}, {freq: 392.00, duration: 400},
+            {freq: 329.63, duration: 200}, {freq: 392.00, duration: 200}, {freq: 329.63, duration: 200},
+            {freq: 293.66, duration: 600}, {freq: 329.63, duration: 600}
+        ];
+
+        const bassLine = [
+            {freq: 164.81, duration: 400}, {freq: 164.81, duration: 400},
+            {freq: 196.00, duration: 400}, {freq: 196.00, duration: 400},
+            {freq: 220.00, duration: 400}, {freq: 220.00, duration: 400},
+            {freq: 196.00, duration: 400}, {freq: 196.00, duration: 400},
+            {freq: 164.81, duration: 400}, {freq: 164.81, duration: 400},
+            {freq: 146.83, duration: 400}, {freq: 146.83, duration: 400},
+            {freq: 164.81, duration: 800}
+        ];
+
+        const arpeggio = [
+            {freq: 329.63, duration: 100}, {freq: 392.00, duration: 100}, {freq: 493.88, duration: 100},
+            {freq: 392.00, duration: 100}, {freq: 329.63, duration: 100}, {freq: 392.00, duration: 100},
+            {freq: 493.88, duration: 100}, {freq: 392.00, duration: 100},
+            {freq: 392.00, duration: 100}, {freq: 493.88, duration: 100}, {freq: 587.33, duration: 100},
+            {freq: 493.88, duration: 100}, {freq: 392.00, duration: 100}, {freq: 493.88, duration: 100},
+            {freq: 587.33, duration: 100}, {freq: 493.88, duration: 100},
+            {freq: 440.00, duration: 100}, {freq: 523.25, duration: 100}, {freq: 659.25, duration: 100},
+            {freq: 523.25, duration: 100}, {freq: 440.00, duration: 100}, {freq: 523.25, duration: 100},
+            {freq: 659.25, duration: 100}, {freq: 523.25, duration: 100}
+        ];
+
+        const pauseMelody = [
+            {freq: 523.25, duration: 600}, {freq: 587.33, duration: 600}, {freq: 659.25, duration: 600},
+            {freq: 587.33, duration: 600}, {freq: 523.25, duration: 800}, {freq: 392.00, duration: 600},
+            {freq: 440.00, duration: 600}, {freq: 493.88, duration: 800}, {freq: 523.25, duration: 600},
+            {freq: 493.88, duration: 600}, {freq: 440.00, duration: 600}, {freq: 392.00, duration: 1200}
+        ];
 
         const game = {
-            score: 0,
-            swords: 0,
-            axes: 0,
-            health: 100,
-            running: false,
-            started: false,
-            paused: false,
-            level: 1,
-            maxLevel: 3,
-            orcsPerLevel: 10,
-            gameWon: false,
-            bossSpawned: false
+            score: 0, potions: 0, health: 100, maxHealth: 100,
+            running: false, started: false, paused: false,
+            level: 1, maxLevel: 3, orcsPerLevel: 10, gameWon: false,
+            bossSpawned: false, bossDefeated: false,
+            swords: 0, axes: 0
         };
 
+        const boss = {
+            active: false,
+            x: 0, y: 0, width: 80, height: 100,
+            speed: 1.5, health: 5, maxHealth: 5,
+            attackCooldown: 0, walkFrame: 0
+        };
+
+        const bloodRainParticles = [];
+        let bloodRainTimer = 0;
+
         const player = {
-            x: 100,
-            y: 300,
-            width: 30,
-            height: 40,
-            speed: 5,
-            velocityY: 0,
-            jumping: false,
-            attacking: false,
-            attackTimer: 0,
-            facing: 1
+            x: 100, y: 300, width: 30, height: 40, speed: PLAYER_SPEED,
+            velocityY: 0, jumping: false, attacking: false, attackTimer: 0,
+            facing: 1, weapon: 'sword', battleAxeUnlocked: false
         };
 
         const keys = {};
         const orcs = [];
-        let orcSpawnTimer = 0;
         const weapons = [];
-        const bloodDrops = [];
-        const victoryDrops = [];
-        let showVictoryRain = false;
-        let victoryRainTimer = 0;
-        const ground = canvas.height - 50;
-        
-        const mobileControls = {
-            left: false,
-            right: false,
-            jump: false,
-            attack: false
-        };
+        const bloodParticles = [];
+        let orcSpawnTimer = 0;
 
-        document.addEventListener('keydown', function(e) {
-            keys[e.code] = true;
-            
-            if (e.code === 'Space') {
-                if (!game.started) {
-                    game.started = true;
-                    game.running = true;
-                } else if (!player.attacking && game.running && !game.paused) {
-                    player.attacking = true;
-                    player.attackTimer = 15;
+        class BloodParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8 - 4;
+                this.size = Math.random() * 6 + 2;
+                this.life = 40;
+                this.maxLife = 40;
+                this.color = Math.random() > 0.5 ? '#8b0000' : '#600000';
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.4;
+                this.life--;
+            }
+            draw() {
+                const alpha = this.life / this.maxLife;
+                CTX.fillStyle = this.color;
+                CTX.globalAlpha = alpha;
+                CTX.fillRect(this.x, this.y, this.size, this.size);
+                if (this.size > 3) {
+                    CTX.fillRect(this.x + 1, this.y + this.size, this.size - 2, 2);
                 }
-                e.preventDefault();
+                CTX.globalAlpha = 1;
             }
-            
-            if (e.code === 'KeyP' && game.started) {
-                game.paused = !game.paused;
+            isDead() {
+                return this.life <= 0;
             }
-            
-            if (e.code === 'KeyR') {
-                location.reload();
-            }
-        });
+        }
 
-        document.addEventListener('keyup', function(e) {
-            keys[e.code] = false;
-        });
+        function playNote(frequency, duration, volume, waveType) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = waveType;
+            oscillator.frequency.value = frequency;
+            
+            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+
+        function startPad() {
+            padOscillator = audioContext.createOscillator();
+            padGain = audioContext.createGain();
+            
+            padOscillator.connect(padGain);
+            padGain.connect(audioContext.destination);
+            
+            padOscillator.type = 'sawtooth';
+            padOscillator.frequency.value = 164.81;
+            
+            padGain.gain.setValueAtTime(0, audioContext.currentTime);
+            padGain.gain.linearRampToValueAtTime(0.04, audioContext.currentTime + 2);
+            
+            padOscillator.start(audioContext.currentTime);
+        }
+
+        function stopPad() {
+            if (padOscillator && padGain) {
+                padGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+                padOscillator.stop(audioContext.currentTime + 0.5);
+                padOscillator = null;
+                padGain = null;
+            }
+        }
+
+        function startMusic() {
+            if (musicPlaying) return;
+            musicPlaying = true;
+            currentNote = 0;
+            currentBassNote = 0;
+            currentArpNote = 0;
+            startPad();
+            
+            function playNextNote() {
+                if (!musicPlaying) return;
+                const note = melody[currentNote];
+                playNote(note.freq, note.duration, 0.10, 'square');
+                currentNote = (currentNote + 1) % melody.length;
+                musicInterval = setTimeout(playNextNote, note.duration);
+            }
+            
+            function playNextBass() {
+                if (!musicPlaying) return;
+                const note = bassLine[currentBassNote];
+                playNote(note.freq, note.duration, 0.12, 'triangle');
+                currentBassNote = (currentBassNote + 1) % bassLine.length;
+                bassInterval = setTimeout(playNextBass, note.duration);
+            }
+            
+            function playNextArp() {
+                if (!musicPlaying) return;
+                const note = arpeggio[currentArpNote];
+                playNote(note.freq, note.duration, 0.05, 'square');
+                currentArpNote = (currentArpNote + 1) % arpeggio.length;
+                arpeggioInterval = setTimeout(playNextArp, note.duration);
+            }
+            
+            playNextNote();
+            playNextBass();
+            playNextArp();
+        }
+
+        function stopMusic() {
+            musicPlaying = false;
+            if (musicInterval) { clearTimeout(musicInterval); musicInterval = null; }
+            if (bassInterval) { clearTimeout(bassInterval); bassInterval = null; }
+            if (arpeggioInterval) { clearTimeout(arpeggioInterval); arpeggioInterval = null; }
+            stopPad();
+        }
+
+        function playPauseMusic() {
+            if (pauseMusicPlaying) return;
+            pauseMusicPlaying = true;
+            let currentPauseNote = 0;
+            
+            function playNextPauseNote() {
+                if (!pauseMusicPlaying) return;
+                const note = pauseMelody[currentPauseNote];
+                playNote(note.freq, note.duration, 0.06, 'sine');
+                currentPauseNote = (currentPauseNote + 1) % pauseMelody.length;
+                pauseMusicInterval = setTimeout(playNextPauseNote, note.duration);
+            }
+            
+            playNextPauseNote();
+        }
+
+        function stopPauseMusic() {
+            pauseMusicPlaying = false;
+            if (pauseMusicInterval) { clearTimeout(pauseMusicInterval); pauseMusicInterval = null; }
+        }
 
         function setupMobileControls() {
-            const leftBtn = document.getElementById('leftBtn');
-            const rightBtn = document.getElementById('rightBtn');
-            const jumpBtn = document.getElementById('jumpBtn');
-            const attackBtn = document.getElementById('attackBtn');
-
-            if (!leftBtn || !rightBtn || !jumpBtn || !attackBtn) return;
-
-            leftBtn.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                mobileControls.left = true;
-            });
-            leftBtn.addEventListener('touchend', function(e) {
-                e.preventDefault();
-                mobileControls.left = false;
-            });
-
-            rightBtn.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                mobileControls.right = true;
-            });
-            rightBtn.addEventListener('touchend', function(e) {
-                e.preventDefault();
-                mobileControls.right = false;
-            });
-
-            jumpBtn.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                if (!game.started) {
-                    game.started = true;
-                    game.running = true;
-                } else if (!player.jumping && game.running && !game.paused) {
-                    player.velocityY = -12;
-                    player.jumping = true;
-                }
-            });
-
-            attackBtn.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                if (!game.started) {
-                    game.started = true;
-                    game.running = true;
-                } else if (!player.attacking && game.running && !game.paused) {
-                    player.attacking = true;
-                    player.attackTimer = 15;
-                }
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(btn => {
+                const key = btn.dataset.key;
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    keys[key] = true;
+                    handleKeyAction(key, true);
+                });
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    keys[key] = false;
+                });
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    keys[key] = true;
+                    handleKeyAction(key, true);
+                });
+                btn.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    keys[key] = false;
+                });
             });
         }
 
-        window.addEventListener('load', function() {
-            setupMobileControls();
-            gameLoop();
+        function handleKeyAction(code, isDown) {
+            if (!isDown) return;
+            if (code === 'Space') {
+                if (!game.started) {
+                    game.started = true;
+                    game.running = true;
+                    startMusic();
+                } else if (!player.attacking && game.running && !game.paused) {
+                    player.attacking = true;
+                    player.attackTimer = ATTACK_DURATION;
+                }
+            }
+            if (code === 'KeyP') {
+                if (game.started && game.running) {
+                    game.paused = !game.paused;
+                    if (game.paused) {
+                        stopMusic();
+                        playPauseMusic();
+                    } else {
+                        stopPauseMusic();
+                        startMusic();
+                    }
+                }
+            }
+            if (code === 'KeyH' && game.potions > 0 && game.health < game.maxHealth && !game.paused) {
+                game.potions--;
+                game.health = Math.min(game.maxHealth, game.health + 30);
+                updateUI();
+            }
+            if (code === 'KeyQ' && player.battleAxeUnlocked && !game.paused) {
+                player.weapon = player.weapon === 'sword' ? 'battleaxe' : 'sword';
+                updateWeaponUI();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!game.started) {
+                    game.started = true;
+                    game.running = true;
+                    startMusic();
+                } else if (!player.attacking && game.running && !game.paused) {
+                    player.attacking = true;
+                    player.attackTimer = ATTACK_DURATION;
+                }
+            }
+            if (e.code === 'KeyP') {
+                if (game.started && game.running) {
+                    game.paused = !game.paused;
+                    if (game.paused) {
+                        stopMusic();
+                        playPauseMusic();
+                    } else {
+                        stopPauseMusic();
+                        startMusic();
+                    }
+                }
+            }
+            if (e.code === 'KeyQ' && player.battleAxeUnlocked && !game.paused) {
+                player.weapon = player.weapon === 'sword' ? 'battleaxe' : 'sword';
+                updateWeaponUI();
+            }
+            if (e.code === 'KeyH' && game.potions > 0 && game.health < game.maxHealth && !game.paused) {
+                game.potions--;
+                game.health = Math.min(game.maxHealth, game.health + 30);
+                updateUI();
+            }
+            if (e.code === 'KeyR') { location.reload(); }
         });
+
+        document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+        function updateWeaponUI() {
+            const weaponSwitch = document.getElementById('weaponSwitch');
+            if (player.battleAxeUnlocked) {
+                weaponSwitch.innerHTML = 'Q - SWITCH (<span class="unlock">' + 
+                    (player.weapon === 'sword' ? 'SWORD' : 'BATTLE AXE') + '</span>) | ';
+            } else {
+                weaponSwitch.innerHTML = '';
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = game.score;
+            document.getElementById('level').textContent = game.level;
+            document.getElementById('potions').textContent = game.potions;
+            document.getElementById('health').textContent = Math.max(0, Math.floor(game.health));
+        }
 
         function spawnOrc() {
             const sizeMultiplier = 1 + (game.level - 1) * 0.25;
+            const health = game.level === 3 ? 3 : 2;
             orcs.push({
-                x: canvas.width + 50,
-                y: ground - (40 * sizeMultiplier),
+                x: CANVAS.width + 50,
+                y: GROUND - (40 * sizeMultiplier),
                 width: 40 * sizeMultiplier,
                 height: 40 * sizeMultiplier,
                 speed: 2 + Math.random(),
-                health: 2,
+                health: health,
+                maxHealth: health,
                 level: game.level,
-                isBoss: false
+                walkFrame: 0
             });
         }
 
-        function spawnBoss() {
-            const bossSize = 2.5;
-            orcs.push({
-                x: canvas.width + 50,
-                y: ground - (40 * bossSize),
-                width: 40 * bossSize,
-                height: 40 * bossSize,
-                speed: 1.5,
-                health: 3,
-                maxHealth: 3,
-                level: game.level,
-                isBoss: true
+        function spawnPotion(x, y) {
+            weapons.push({
+                x: x, y: y,
+                type: 'potion',
+                velocityY: -5, gravity: 0.3
             });
-            game.bossSpawned = true;
         }
 
         function spawnWeapon(x, y) {
-            const type = Math.random() > 0.5 ? 'sword' : 'axe';
-            weapons.push({
-                x: x,
-                y: y,
-                type: type,
-                velocityY: -5,
-                gravity: 0.3
-            });
+            const rand = Math.random();
+            if (rand < 0.7) {
+                spawnPotion(x, y);
+            } else if (rand < 0.85) {
+                weapons.push({
+                    x: x, y: y,
+                    type: 'sword',
+                    velocityY: -5, gravity: 0.3
+                });
+            } else {
+                weapons.push({
+                    x: x, y: y,
+                    type: 'axe',
+                    velocityY: -5, gravity: 0.3
+                });
+            }
         }
 
         function createBloodSplatter(x, y) {
-            for (let i = 0; i < 12; i++) {
-                bloodDrops.push({
-                    x: x,
-                    y: y,
-                    velocityX: (Math.random() - 0.5) * 8,
-                    velocityY: -Math.random() * 5 - 2,
-                    gravity: 0.4,
-                    life: 60
-                });
+            for (let i = 0; i < 15; i++) {
+                bloodParticles.push(new BloodParticle(x, y));
             }
         }
 
-        function createVictoryRain() {
-            showVictoryRain = true;
-            victoryRainTimer = 200;
-            for (let i = 0; i < 150; i++) {
-                victoryDrops.push({
-                    x: Math.random() * canvas.width,
-                    y: -Math.random() * canvas.height * 2,
-                    velocityY: Math.random() * 4 + 3,
-                    size: Math.random() * 4 + 2
+        function spawnBoss() {
+            boss.active = true;
+            boss.x = CANVAS.width + 100;
+            boss.y = GROUND - boss.height;
+            boss.health = boss.maxHealth;
+            boss.attackCooldown = 0;
+            boss.walkFrame = 0;
+            game.bossSpawned = true;
+        }
+
+        function createBloodRain() {
+            for (let i = 0; i < 100; i++) {
+                bloodRainParticles.push({
+                    x: Math.random() * CANVAS.width,
+                    y: -Math.random() * CANVAS.height,
+                    speed: Math.random() * 3 + 2,
+                    length: Math.random() * 10 + 5
                 });
             }
+            bloodRainTimer = 180;
         }
 
         function drawPlayer() {
-            ctx.fillStyle = '#8b7355';
-            ctx.fillRect(player.x + 8, player.y + 28, 6, 12);
-            ctx.fillRect(player.x + 16, player.y + 28, 6, 12);
-            
-            ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(player.x + 5, player.y + 5, 20, 25);
-            
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(player.x + 6, player.y + 6, 18, 3);
-            ctx.fillRect(player.x + 7, player.y + 12, 16, 2);
-            ctx.fillRect(player.x + 8, player.y + 18, 14, 2);
-            
-            ctx.fillStyle = '#3a3a3a';
-            ctx.fillRect(player.x + 2, player.y + 3, 7, 8);
-            ctx.fillRect(player.x + 21, player.y + 3, 7, 8);
-            
-            ctx.fillStyle = '#555555';
-            ctx.fillRect(player.x, player.y + 2, 3, 3);
-            ctx.fillRect(player.x + 27, player.y + 2, 3, 3);
-            
-            ctx.fillStyle = '#666666';
-            ctx.fillRect(player.x + 13, player.y + 8, 4, 3);
-            
-            ctx.fillStyle = '#ffaa88';
-            ctx.fillRect(player.x + 8, player.y - 10, 14, 12);
-            
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(player.x + 6, player.y - 15, 18, 8);
-            
-            ctx.fillStyle = '#000';
-            ctx.fillRect(player.x + 9, player.y - 11, 12, 3);
-            
-            ctx.fillStyle = '#3a3a3a';
-            ctx.fillRect(player.x + 7, player.y - 14, 3, 2);
-            
-            ctx.fillStyle = '#666666';
-            ctx.fillRect(player.x + 5, player.y - 16, 2, 3);
-            ctx.fillRect(player.x + 23, player.y - 16, 2, 3);
-            
-            ctx.fillStyle = '#8b0000';
-            ctx.fillRect(player.x + 13, player.y - 18, 4, 4);
-            ctx.fillRect(player.x + 14, player.y - 20, 2, 3);
+            const p = player;
+            CTX.fillStyle = '#8b7355';
+            CTX.fillRect(p.x + 6, p.y + 28, 8, 14);
+            CTX.fillRect(p.x + 16, p.y + 28, 8, 14);
+            CTX.fillStyle = '#4a4a4a';
+            CTX.fillRect(p.x + 2, p.y + 2, 26, 28);
+            CTX.fillStyle = '#6a6a6a';
+            CTX.fillRect(p.x + 3, p.y + 3, 24, 4);
+            CTX.fillRect(p.x + 4, p.y + 10, 22, 3);
+            CTX.fillRect(p.x + 5, p.y + 16, 20, 2);
+            CTX.fillStyle = '#5a3a1a';
+            CTX.fillRect(p.x + 2, p.y + 22, 26, 4);
+            CTX.fillStyle = '#8a7a5a';
+            CTX.fillRect(p.x + 12, p.y + 22, 6, 4);
+            CTX.fillStyle = '#5a5a5a';
+            CTX.fillRect(p.x - 2, p.y + 1, 10, 10);
+            CTX.fillRect(p.x + 22, p.y + 1, 10, 10);
+            CTX.fillStyle = '#3a3a3a';
+            CTX.fillRect(p.x, p.y - 2, 3, 4);
+            CTX.fillRect(p.x + 27, p.y - 2, 3, 4);
+            CTX.fillStyle = '#7a7a7a';
+            CTX.fillRect(p.x - 1, p.y + 2, 8, 2);
+            CTX.fillRect(p.x + 23, p.y + 2, 8, 2);
+            CTX.fillStyle = '#ffaa88';
+            CTX.fillRect(p.x + 8, p.y - 10, 14, 12);
+            CTX.fillStyle = '#3a3a3a';
+            CTX.fillRect(p.x + 5, p.y - 16, 20, 10);
+            CTX.fillStyle = '#000';
+            CTX.fillRect(p.x + 8, p.y - 12, 14, 4);
+            CTX.fillStyle = '#5a5a5a';
+            CTX.fillRect(p.x + 6, p.y - 15, 4, 2);
+            CTX.fillStyle = '#8b0000';
+            CTX.fillRect(p.x + 12, p.y - 20, 6, 5);
+            CTX.fillRect(p.x + 13, p.y - 23, 4, 4);
+            CTX.fillStyle = '#8a7a5a';
+            CTX.fillRect(p.x + 4, p.y - 14, 3, 3);
+            CTX.fillRect(p.x + 23, p.y - 14, 3, 3);
 
-            if (player.attacking) {
-                const swordX = player.x + (player.facing > 0 ? player.width : -45);
-                const swordY = player.y + 8;
-                
-                ctx.fillStyle = '#7a7a7a';
-                ctx.fillRect(swordX, swordY, 40, 8);
-                
-                ctx.fillStyle = '#c0c0c0';
-                ctx.fillRect(swordX, swordY + 1, 40, 2);
-                
-                ctx.fillStyle = '#a0a0a0';
-                ctx.beginPath();
-                ctx.moveTo(swordX + 40, swordY);
-                ctx.lineTo(swordX + 48, swordY + 4);
-                ctx.lineTo(swordX + 40, swordY + 8);
-                ctx.fill();
-                
-                ctx.fillStyle = '#4a3a2a';
-                ctx.fillRect(swordX - 3, swordY - 4, 6, 16);
-                
-                ctx.fillStyle = '#6a5a4a';
-                ctx.fillRect(swordX - 2, swordY - 3, 4, 2);
-                ctx.fillRect(swordX - 2, swordY + 9, 4, 2);
-                
-                ctx.fillStyle = '#3a2a1a';
-                ctx.fillRect(swordX - 12, swordY + 1, 10, 6);
-                
-                ctx.fillStyle = '#2a1a0a';
-                ctx.fillRect(swordX - 10, swordY + 2, 1, 4);
-                ctx.fillRect(swordX - 7, swordY + 2, 1, 4);
-                ctx.fillRect(swordX - 4, swordY + 2, 1, 4);
-                
-                ctx.fillStyle = '#5a4a3a';
-                ctx.fillRect(swordX - 15, swordY, 4, 8);
-                
-                ctx.fillStyle = 'rgba(200, 200, 255, 0.4)';
-                ctx.fillRect(swordX + 2, swordY - 2, 44, 12);
+            const barWidth = 40;
+            const barHeight = 6;
+            const barX = p.x + (p.width / 2) - (barWidth / 2);
+            const barY = p.y - 30;
+            CTX.fillStyle = '#2a0000';
+            CTX.fillRect(barX, barY, barWidth, barHeight);
+            const healthPercent = game.health / game.maxHealth;
+            if (healthPercent > 0.6) {
+                CTX.fillStyle = '#00ff00';
+            } else if (healthPercent > 0.3) {
+                CTX.fillStyle = '#ffaa00';
+            } else {
+                CTX.fillStyle = '#ff0000';
             }
+            CTX.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+            CTX.strokeStyle = '#000';
+            CTX.lineWidth = 1;
+            CTX.strokeRect(barX, barY, barWidth, barHeight);
+            CTX.fillStyle = '#fff';
+            CTX.font = '8px "Press Start 2P"';
+            CTX.textAlign = 'center';
+            CTX.fillText(Math.floor(game.health) + '%', barX + barWidth / 2, barY - 2);
+
+            if (p.attacking) {
+                if (p.weapon === 'sword') { drawSword(); } 
+                else { drawBattleAxe(); }
+            }
+        }
+
+        function drawSword() {
+            const swordX = player.x + (player.facing > 0 ? player.width : -45);
+            const swordY = player.y + 8;
+            CTX.fillStyle = '#9a9a9a';
+            CTX.fillRect(swordX, swordY, 40, 8);
+            CTX.fillStyle = '#c0c0c0';
+            CTX.fillRect(swordX, swordY + 1, 40, 2);
+            CTX.fillStyle = '#b0b0b0';
+            CTX.beginPath();
+            CTX.moveTo(swordX + 40, swordY);
+            CTX.lineTo(swordX + 48, swordY + 4);
+            CTX.lineTo(swordX + 40, swordY + 8);
+            CTX.fill();
+            CTX.fillStyle = '#6a5a3a';
+            CTX.fillRect(swordX - 3, swordY - 4, 6, 16);
+            CTX.fillStyle = '#8a7a5a';
+            CTX.fillRect(swordX - 2, swordY - 3, 4, 2);
+            CTX.fillRect(swordX - 2, swordY + 9, 4, 2);
+            CTX.fillStyle = '#5a3a1a';
+            CTX.fillRect(swordX - 12, swordY + 1, 10, 6);
+            CTX.fillStyle = '#4a2a0a';
+            CTX.fillRect(swordX - 10, swordY + 2, 1, 4);
+            CTX.fillRect(swordX - 7, swordY + 2, 1, 4);
+            CTX.fillRect(swordX - 4, swordY + 2, 1, 4);
+            CTX.fillStyle = '#8a7a5a';
+            CTX.fillRect(swordX - 15, swordY, 4, 8);
+            CTX.fillStyle = 'rgba(255, 255, 100, 0.3)';
+            CTX.fillRect(swordX + 2, swordY - 2, 44, 12);
+        }
+
+        function drawBattleAxe() {
+            const axeX = player.x + (player.facing > 0 ? player.width : -55);
+            const axeY = player.y + 5;
+            CTX.fillStyle = '#5a3a1a';
+            CTX.fillRect(axeX, axeY + 5, 40, 8);
+            CTX.fillStyle = '#4a2a0a';
+            for (let i = 0; i < 6; i++) {
+                CTX.fillRect(axeX + 5 + i * 6, axeY + 6, 2, 6);
+            }
+            CTX.fillStyle = '#666';
+            CTX.fillRect(axeX + 35, axeY - 10, 15, 28);
+            CTX.fillStyle = '#e8e8e8';
+            CTX.beginPath();
+            CTX.moveTo(axeX + 50, axeY - 10);
+            CTX.quadraticCurveTo(axeX + 65, axeY - 15, axeX + 70, axeY);
+            CTX.lineTo(axeX + 65, axeY + 2);
+            CTX.quadraticCurveTo(axeX + 60, axeY - 5, axeX + 50, axeY - 8);
+            CTX.closePath();
+            CTX.fill();
+            CTX.fillStyle = '#e8e8e8';
+            CTX.beginPath();
+            CTX.moveTo(axeX + 50, axeY + 18);
+            CTX.quadraticCurveTo(axeX + 65, axeY + 23, axeX + 70, axeY + 8);
+            CTX.lineTo(axeX + 65, axeY + 6);
+            CTX.quadraticCurveTo(axeX + 60, axeY + 13, axeX + 50, axeY + 16);
+            CTX.closePath();
+            CTX.fill();
+            CTX.fillStyle = '#ffffff';
+            CTX.beginPath();
+            CTX.moveTo(axeX + 52, axeY - 8);
+            CTX.lineTo(axeX + 62, axeY - 10);
+            CTX.lineTo(axeX + 60, axeY - 6);
+            CTX.closePath();
+            CTX.fill();
+            CTX.beginPath();
+            CTX.moveTo(axeX + 52, axeY + 16);
+            CTX.lineTo(axeX + 62, axeY + 18);
+            CTX.lineTo(axeX + 60, axeY + 14);
+            CTX.closePath();
+            CTX.fill();
+            CTX.fillStyle = '#8b0000';
+            CTX.fillRect(axeX + 54, axeY - 6, 3, 2);
+            CTX.fillRect(axeX + 58, axeY - 4, 2, 3);
+            CTX.fillRect(axeX + 62, axeY - 7, 3, 2);
+            CTX.fillRect(axeX + 56, axeY - 2, 2, 2);
+            CTX.fillRect(axeX + 55, axeY + 14, 3, 2);
+            CTX.fillRect(axeX + 59, axeY + 12, 2, 3);
+            CTX.fillRect(axeX + 63, axeY + 15, 3, 2);
+            CTX.fillRect(axeX + 57, axeY + 10, 2, 2);
+            CTX.fillStyle = '#600000';
+            CTX.fillRect(axeX + 53, axeY - 3, 2, 1);
+            CTX.fillRect(axeX + 61, axeY + 11, 2, 1);
+            CTX.fillRect(axeX + 56, axeY + 5, 1, 2);
+            CTX.fillStyle = 'rgba(255, 100, 50, 0.4)';
+            CTX.fillRect(axeX + 35, axeY - 12, 40, 32);
         }
 
         function drawOrc(orc) {
-            let bodyColor, headColor;
-            if (orc.level === 1) {
-                bodyColor = '#2d5016';
-                headColor = '#4a7c2c';
-            } else if (orc.level === 2) {
-                bodyColor = '#5a1a3a';
-                headColor = '#8a2a5a';
-            } else {
-                bodyColor = '#1a2a5a';
-                headColor = '#2a4a8a';
-            }
-            
-            if (orc.isBoss) {
-                bodyColor = '#3a0a0a';
-                headColor = '#5a1a1a';
-            }
-            
-            ctx.fillStyle = bodyColor;
-            ctx.fillRect(orc.x, orc.y, orc.width, orc.height);
-            
-            ctx.fillStyle = headColor;
+            const colors = [
+                {body: '#2d5016', head: '#4a7c2c'},
+                {body: '#5a1a3a', head: '#8a2a5a'},
+                {body: '#1a2a5a', head: '#2a4a8a'}
+            ];
+            const color = colors[orc.level - 1];
+            orc.walkFrame = (orc.walkFrame + 0.1) % (Math.PI * 2);
+            const legOffset = Math.sin(orc.walkFrame) * 3;
+            CTX.fillStyle = color.body;
+            const legWidth = orc.width * 0.25;
+            const legHeight = orc.height * 0.4;
+            CTX.fillRect(orc.x + orc.width * 0.2, orc.y + orc.height - legHeight + legOffset, legWidth, legHeight);
+            CTX.fillRect(orc.x + orc.width * 0.55, orc.y + orc.height - legHeight - legOffset, legWidth, legHeight);
+            CTX.fillStyle = '#1a1a1a';
+            CTX.fillRect(orc.x + orc.width * 0.18, orc.y + orc.height + legOffset, legWidth * 1.2, orc.height * 0.1);
+            CTX.fillRect(orc.x + orc.width * 0.53, orc.y + orc.height - legOffset, legWidth * 1.2, orc.height * 0.1);
+            CTX.fillStyle = color.body;
+            CTX.fillRect(orc.x, orc.y, orc.width, orc.height * 0.7);
+            CTX.fillStyle = color.head;
             const headWidth = orc.width * 0.6;
             const headHeight = orc.height * 0.45;
-            ctx.fillRect(orc.x + orc.width * 0.2, orc.y - headHeight, headWidth, headHeight);
-            
-            ctx.fillStyle = orc.isBoss ? '#FF8800' : '#FFD700';
-            const hornHeight = orc.height * (orc.isBoss ? 0.7 : 0.6);
-            ctx.beginPath();
-            ctx.moveTo(orc.x + orc.width * 0.22, orc.y - headHeight);
-            ctx.lineTo(orc.x + orc.width * 0.12, orc.y - headHeight - hornHeight);
-            ctx.lineTo(orc.x + orc.width * 0.34, orc.y - headHeight);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(orc.x + orc.width * 0.66, orc.y - headHeight);
-            ctx.lineTo(orc.x + orc.width * 0.88, orc.y - headHeight - hornHeight);
-            ctx.lineTo(orc.x + orc.width * 0.78, orc.y - headHeight);
-            ctx.fill();
-            
-            ctx.fillStyle = orc.isBoss ? '#DD6600' : '#FFAA00';
-            ctx.beginPath();
-            ctx.moveTo(orc.x + orc.width * 0.25, orc.y - headHeight);
-            ctx.lineTo(orc.x + orc.width * 0.16, orc.y - headHeight - hornHeight * 0.85);
-            ctx.lineTo(orc.x + orc.width * 0.30, orc.y - headHeight);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(orc.x + orc.width * 0.70, orc.y - headHeight);
-            ctx.lineTo(orc.x + orc.width * 0.84, orc.y - headHeight - hornHeight * 0.85);
-            ctx.lineTo(orc.x + orc.width * 0.75, orc.y - headHeight);
-            ctx.fill();
-            
-            ctx.fillStyle = '#ffffff';
-            const mouthY = orc.y - headHeight * 0.3;
-            const mouthWidth = orc.width * 0.3;
-            ctx.fillRect(orc.x + orc.width * 0.35, mouthY, mouthWidth, headHeight * 0.15);
-            
-            ctx.fillStyle = '#000';
-            const fangSize = orc.width * 0.06;
-            ctx.beginPath();
-            ctx.moveTo(orc.x + orc.width * 0.38, mouthY);
-            ctx.lineTo(orc.x + orc.width * 0.38 + fangSize, mouthY);
-            ctx.lineTo(orc.x + orc.width * 0.38 + fangSize / 2, mouthY + fangSize * 1.5);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(orc.x + orc.width * 0.58, mouthY);
-            ctx.lineTo(orc.x + orc.width * 0.58 + fangSize, mouthY);
-            ctx.lineTo(orc.x + orc.width * 0.58 + fangSize / 2, mouthY + fangSize * 1.5);
-            ctx.fill();
-            
-            ctx.fillStyle = '#ff0000';
+            CTX.fillRect(orc.x + orc.width * 0.2, orc.y - headHeight, headWidth, headHeight);
+            CTX.fillStyle = '#2a2a2a';
+            const hornHeight = orc.height * 0.5;
+            CTX.beginPath();
+            CTX.moveTo(orc.x + orc.width * 0.25, orc.y - headHeight);
+            CTX.quadraticCurveTo(orc.x + orc.width * 0.1, orc.y - headHeight - hornHeight * 0.5, orc.x + orc.width * 0.05, orc.y - headHeight - hornHeight);
+            CTX.lineTo(orc.x + orc.width * 0.15, orc.y - headHeight - hornHeight * 0.9);
+            CTX.quadraticCurveTo(orc.x + orc.width * 0.18, orc.y - headHeight - hornHeight * 0.4, orc.x + orc.width * 0.3, orc.y - headHeight);
+            CTX.closePath();
+            CTX.fill();
+            CTX.beginPath();
+            CTX.moveTo(orc.x + orc.width * 0.75, orc.y - headHeight);
+            CTX.quadraticCurveTo(orc.x + orc.width * 0.9, orc.y - headHeight - hornHeight * 0.5, orc.x + orc.width * 0.95, orc.y - headHeight - hornHeight);
+            CTX.lineTo(orc.x + orc.width * 0.85, orc.y - headHeight - hornHeight * 0.9);
+            CTX.quadraticCurveTo(orc.x + orc.width * 0.82, orc.y - headHeight - hornHeight * 0.4, orc.x + orc.width * 0.7, orc.y - headHeight);
+            CTX.closePath();
+            CTX.fill();
+            CTX.fillStyle = '#444';
+            CTX.fillRect(orc.x + orc.width * 0.12, orc.y - headHeight - hornHeight * 0.8, orc.width * 0.04, hornHeight * 0.3);
+            CTX.fillRect(orc.x + orc.width * 0.84, orc.y - headHeight - hornHeight * 0.8, orc.width * 0.04, hornHeight * 0.3);
+            CTX.fillStyle = '#ff0000';
             const eyeSize = orc.width * 0.12;
-            ctx.fillRect(orc.x + orc.width * 0.3, orc.y - headHeight * 0.7, eyeSize, eyeSize);
-            ctx.fillRect(orc.x + orc.width * 0.55, orc.y - headHeight * 0.7, eyeSize, eyeSize);
-            
-            ctx.fillStyle = '#ff6666';
+            CTX.fillRect(orc.x + orc.width * 0.3, orc.y - headHeight * 0.6, eyeSize, eyeSize);
+            CTX.fillRect(orc.x + orc.width * 0.55, orc.y - headHeight * 0.6, eyeSize, eyeSize);
+            CTX.fillStyle = '#ff6666';
             const glowSize = eyeSize * 0.5;
-            ctx.fillRect(orc.x + orc.width * 0.32, orc.y - headHeight * 0.68, glowSize, glowSize);
-            ctx.fillRect(orc.x + orc.width * 0.57, orc.y - headHeight * 0.68, glowSize, glowSize);
-            
-            if (orc.isBoss) {
-                ctx.fillStyle = '#ff0000';
-                ctx.font = 'bold 12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('BOSS', orc.x + orc.width / 2, orc.y - headHeight - hornHeight - 5);
-                
-                ctx.fillStyle = '#555';
-                ctx.fillRect(orc.x, orc.y - headHeight - hornHeight - 20, orc.width, 8);
-                ctx.fillStyle = '#ff0000';
+            CTX.fillRect(orc.x + orc.width * 0.32, orc.y - headHeight * 0.58, glowSize, glowSize);
+            CTX.fillRect(orc.x + orc.width * 0.57, orc.y - headHeight * 0.58, glowSize, glowSize);
+            CTX.fillStyle = '#eee';
+            const tuskWidth = orc.width * 0.08;
+            const tuskHeight = headHeight * 0.3;
+            CTX.fillRect(orc.x + orc.width * 0.28, orc.y - headHeight * 0.2, tuskWidth, tuskHeight);
+            CTX.fillRect(orc.x + orc.width * 0.62, orc.y - headHeight * 0.2, tuskWidth, tuskHeight);
+
+            if (orc.level === 3 && orc.maxHealth) {
+                const barWidth = orc.width;
+                const barHeight = 6;
+                const barX = orc.x;
+                const barY = orc.y - headHeight - hornHeight - 15;
+                CTX.fillStyle = '#2a0000';
+                CTX.fillRect(barX, barY, barWidth, barHeight);
                 const healthPercent = orc.health / orc.maxHealth;
-                ctx.fillRect(orc.x, orc.y - headHeight - hornHeight - 20, orc.width * healthPercent, 8);
+                CTX.fillStyle = healthPercent > 0.5 ? '#8b0000' : '#ff0000';
+                CTX.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+                CTX.strokeStyle = '#000';
+                CTX.lineWidth = 1;
+                CTX.strokeRect(barX, barY, barWidth, barHeight);
             }
         }
 
+        function drawDemonBoss() {
+            if (!boss.active) return;
+            
+            boss.walkFrame = (boss.walkFrame + 0.05) % (Math.PI * 2);
+            const hover = Math.sin(boss.walkFrame) * 5;
+            
+            const bx = boss.x;
+            const by = boss.y + hover;
+            
+            CTX.fillStyle = '#2a0a0a';
+            CTX.beginPath();
+            CTX.moveTo(bx, by + 20);
+            CTX.quadraticCurveTo(bx - 40, by, bx - 50, by + 30);
+            CTX.quadraticCurveTo(bx - 35, by + 40, bx - 20, by + 35);
+            CTX.quadraticCurveTo(bx - 15, by + 25, bx, by + 30);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.beginPath();
+            CTX.moveTo(bx + boss.width, by + 20);
+            CTX.quadraticCurveTo(bx + boss.width + 40, by, bx + boss.width + 50, by + 30);
+            CTX.quadraticCurveTo(bx + boss.width + 35, by + 40, bx + boss.width + 20, by + 35);
+            CTX.quadraticCurveTo(bx + boss.width + 15, by + 25, bx + boss.width, by + 30);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.fillStyle = '#4a0a0a';
+            CTX.beginPath();
+            CTX.moveTo(bx - 10, by + 22);
+            CTX.lineTo(bx - 35, by + 15);
+            CTX.lineTo(bx - 25, by + 30);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.beginPath();
+            CTX.moveTo(bx + boss.width + 10, by + 22);
+            CTX.lineTo(bx + boss.width + 35, by + 15);
+            CTX.lineTo(bx + boss.width + 25, by + 30);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.fillStyle = '#6a0a0a';
+            CTX.fillRect(bx + 15, by + 20, 50, 60);
+            
+            CTX.fillStyle = '#8a1a1a';
+            CTX.fillRect(bx + 20, by + 25, 20, 15);
+            CTX.fillRect(bx + 45, by + 25, 20, 15);
+            CTX.fillRect(bx + 30, by + 45, 20, 25);
+            
+            CTX.fillStyle = '#6a0a0a';
+            CTX.fillRect(bx + 5, by + 30, 15, 35);
+            CTX.fillRect(bx + 60, by + 30, 15, 35);
+            
+            CTX.fillStyle = '#1a1a1a';
+            for (let i = 0; i < 3; i++) {
+                CTX.fillRect(bx + 6 + i * 4, by + 65, 3, 10);
+                CTX.fillRect(bx + 61 + i * 4, by + 65, 3, 10);
+            }
+            
+            CTX.fillStyle = '#5a0a0a';
+            CTX.fillRect(bx + 22, by + 80, 14, 20);
+            CTX.fillRect(bx + 44, by + 80, 14, 20);
+            
+            CTX.fillStyle = '#000';
+            CTX.fillRect(bx + 20, by + 98, 18, 6);
+            CTX.fillRect(bx + 42, by + 98, 18, 6);
+            
+            CTX.fillStyle = '#8a1a1a';
+            CTX.fillRect(bx + 25, by - 5, 30, 30);
+            
+            CTX.fillStyle = '#1a1a1a';
+            CTX.beginPath();
+            CTX.moveTo(bx + 27, by);
+            CTX.quadraticCurveTo(bx + 15, by - 15, bx + 10, by - 25);
+            CTX.lineTo(bx + 15, by - 23);
+            CTX.quadraticCurveTo(bx + 22, by - 10, bx + 30, by);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.beginPath();
+            CTX.moveTo(bx + 53, by);
+            CTX.quadraticCurveTo(bx + 65, by - 15, bx + 70, by - 25);
+            CTX.lineTo(bx + 65, by - 23);
+            CTX.quadraticCurveTo(bx + 58, by - 10, bx + 50, by);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.fillStyle = '#ff0000';
+            CTX.fillRect(bx + 30, by + 8, 8, 10);
+            CTX.fillRect(bx + 42, by + 8, 8, 10);
+            
+            CTX.fillStyle = '#ff6666';
+            CTX.fillRect(bx + 32, by + 10, 4, 6);
+            CTX.fillRect(bx + 44, by + 10, 4, 6);
+            
+            const gradient = CTX.createRadialGradient(bx + boss.width/2, by + 50, 10, bx + boss.width/2, by + 50, 60);
+            gradient.addColorStop(0, 'rgba(255, 0, 0, 0.3)');
+            gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+            CTX.fillStyle = gradient;
+            CTX.fillRect(bx - 60, by, boss.width + 120, boss.height);
+            
+            CTX.fillStyle = '#fff';
+            CTX.fillRect(bx + 32, by + 18, 3, 6);
+            CTX.fillRect(bx + 45, by + 18, 3, 6);
+            
+            const barWidth = 150;
+            const barHeight = 10;
+            const barX = CANVAS.width / 2 - barWidth / 2;
+            const barY = 30;
+            
+            CTX.fillStyle = '#2a0000';
+            CTX.fillRect(barX, barY, barWidth, barHeight);
+            
+            const healthPercent = boss.health / boss.maxHealth;
+            CTX.fillStyle = healthPercent > 0.6 ? '#8b0000' : healthPercent > 0.3 ? '#ff0000' : '#ff3333';
+            CTX.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+            
+            CTX.strokeStyle = '#ff0000';
+            CTX.lineWidth = 2;
+            CTX.strokeRect(barX, barY, barWidth, barHeight);
+            
+            CTX.fillStyle = '#fff';
+            CTX.font = '10px "Press Start 2P"';
+            CTX.textAlign = 'center';
+            CTX.fillText('DEMON BOSS', CANVAS.width / 2, barY - 5);
+        }
+
         function drawWeapon(weapon) {
-            if (weapon.type === 'sword') {
-                ctx.fillStyle = '#c0c0c0';
-                ctx.fillRect(weapon.x, weapon.y, 8, 20);
-                ctx.fillStyle = '#8b4513';
-                ctx.fillRect(weapon.x + 1, weapon.y + 15, 6, 8);
+            if (weapon.type === 'potion') {
+                const wx = weapon.x;
+                const wy = weapon.y;
+                
+                CTX.fillStyle = '#4a4a6a';
+                CTX.fillRect(wx + 4, wy + 10, 12, 25);
+                
+                CTX.fillStyle = '#ff0000';
+                CTX.fillRect(wx + 5, wy + 15, 10, 18);
+                
+                CTX.fillStyle = '#8a8aaa';
+                CTX.fillRect(wx + 6, wy + 12, 3, 20);
+                
+                CTX.fillStyle = '#6a4a2a';
+                CTX.fillRect(wx + 6, wy + 6, 8, 6);
+                
+                CTX.fillStyle = '#8a6a4a';
+                CTX.fillRect(wx + 7, wy + 4, 6, 3);
+                
+                CTX.fillStyle = '#ffffff';
+                CTX.fillRect(wx + 7, wy + 13, 2, 3);
+                
+            } else if (weapon.type === 'sword') {
+                const wx = weapon.x;
+                const wy = weapon.y;
+                
+                CTX.fillStyle = '#c0c0c0';
+                CTX.fillRect(wx - 3, wy, 14, 35);
+                
+                CTX.fillStyle = '#e8e8e8';
+                CTX.fillRect(wx - 2, wy + 1, 3, 33);
+                
+                CTX.fillStyle = '#b0b0b0';
+                CTX.beginPath();
+                CTX.moveTo(wx - 3, wy);
+                CTX.lineTo(wx + 4, wy - 8);
+                CTX.lineTo(wx + 11, wy);
+                CTX.closePath();
+                CTX.fill();
+                
+                CTX.fillStyle = '#808080';
+                CTX.fillRect(wx + 8, wy + 2, 3, 32);
+                
+                CTX.fillStyle = '#d4af37';
+                CTX.fillRect(wx - 8, wy + 35, 24, 6);
+                
+                CTX.fillStyle = '#ffd700';
+                CTX.fillRect(wx - 8, wy + 36, 2, 4);
+                CTX.fillRect(wx + 14, wy + 36, 2, 4);
+                CTX.fillRect(wx - 7, wy + 35, 22, 2);
+                
+                CTX.fillStyle = '#8b4513';
+                CTX.fillRect(wx - 2, wy + 41, 12, 18);
+                
+                CTX.fillStyle = '#654321';
+                CTX.fillRect(wx - 2, wy + 43, 12, 2);
+                CTX.fillRect(wx - 2, wy + 48, 12, 2);
+                CTX.fillRect(wx - 2, wy + 53, 12, 2);
+                
+                CTX.fillStyle = '#d4af37';
+                CTX.fillRect(wx - 4, wy + 59, 16, 8);
+                
+                CTX.fillStyle = '#8b0000';
+                CTX.fillRect(wx + 2, wy + 61, 4, 4);
+                
+            } else if (weapon.type === 'axe') {
+                const wx = weapon.x;
+                const wy = weapon.y;
+                
+                CTX.fillStyle = '#8b4513';
+                CTX.fillRect(wx + 3, wy + 20, 10, 45);
+                
+                CTX.fillStyle = '#654321';
+                CTX.fillRect(wx + 4, wy + 25, 8, 2);
+                CTX.fillRect(wx + 4, wy + 35, 8, 2);
+                CTX.fillRect(wx + 4, wy + 45, 8, 2);
+                CTX.fillRect(wx + 4, wy + 55, 8, 2);
+                
+                CTX.fillStyle = '#4a4a4a';
+                CTX.fillRect(wx + 2, wy + 63, 12, 4);
+                
+                CTX.fillStyle = '#3a3a3a';
+                CTX.fillRect(wx - 2, wy + 8, 20, 20);
+                
+                CTX.fillStyle = '#808080';
+                CTX.beginPath();
+                CTX.moveTo(wx + 18, wy + 10);
+                CTX.lineTo(wx + 32, wy + 6);
+                CTX.lineTo(wx + 35, wy + 18);
+                CTX.lineTo(wx + 18, wy + 22);
+                CTX.closePath();
+                CTX.fill();
+                
+                CTX.fillStyle = '#b0b0b0';
+                CTX.beginPath();
+                CTX.moveTo(wx + 19, wy + 12);
+                CTX.lineTo(wx + 30, wy + 8);
+                CTX.lineTo(wx + 28, wy + 16);
+                CTX.closePath();
+                CTX.fill();
+                
+                CTX.fillStyle = '#e8e8e8';
+                CTX.beginPath();
+                CTX.moveTo(wx + 28, wy + 8);
+                CTX.lineTo(wx + 35, wy + 18);
+                CTX.lineTo(wx + 32, wy + 10);
+                CTX.closePath();
+                CTX.fill();
+                
+                CTX.fillStyle = '#d4af37';
+                CTX.fillRect(wx + 2, wy + 22, 12, 3);
+                CTX.fillRect(wx + 2, wy + 60, 12, 3);
+            }
+        }
+
+        function drawBackground() {
+            CTX.fillStyle = '#0a0a1a';
+            CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
+            
+            if (game.level < 3) {
+                CTX.fillStyle = '#ffffff';
+                for (let i = 0; i < 50; i++) {
+                    const starX = (i * 47 + Date.now() * 0.01) % CANVAS.width;
+                    const starY = (i * 67) % (CANVAS.height - 100);
+                    CTX.fillRect(starX, starY, 2, 2);
+                }
+                CTX.fillStyle = '#4a2a6a';
+                CTX.beginPath();
+                CTX.arc(650, 80, 30, 0, Math.PI * 2);
+                CTX.fill();
+                CTX.fillStyle = '#6a4a3a';
+                CTX.beginPath();
+                CTX.arc(150, 120, 20, 0, Math.PI * 2);
+                CTX.fill();
+                CTX.fillStyle = '#3d3d5c';
+                CTX.fillRect(0, GROUND, CANVAS.width, CANVAS.height - GROUND);
+                CTX.strokeStyle = '#2a2a4a';
+                CTX.lineWidth = 2;
+                for (let y = GROUND; y < CANVAS.height; y += 20) {
+                    for (let x = 0; x < CANVAS.width; x += 40) {
+                        CTX.strokeRect(x, y, 40, 20);
+                    }
+                }
+                const windowPositions = [
+                    {x: 100, y: GROUND - 120}, {x: 300, y: GROUND - 150},
+                    {x: 500, y: GROUND - 100}, {x: 650, y: GROUND - 140}
+                ];
+                windowPositions.forEach(pos => {
+                    CTX.fillStyle = '#2a2a3a';
+                    CTX.fillRect(pos.x - 5, pos.y - 5, 60, 80);
+                    CTX.fillStyle = '#0a0a1a';
+                    CTX.fillRect(pos.x, pos.y, 50, 70);
+                    CTX.fillStyle = '#ffffff';
+                    for (let i = 0; i < 8; i++) {
+                        const sx = pos.x + (i * 13) % 45 + 2;
+                        const sy = pos.y + (i * 17) % 65 + 2;
+                        CTX.fillRect(sx, sy, 1, 1);
+                    }
+                    CTX.fillStyle = '#1a1a2a';
+                    CTX.fillRect(pos.x, pos.y + 33, 50, 4);
+                    CTX.fillRect(pos.x + 23, pos.y, 4, 70);
+                });
             } else {
-                ctx.fillStyle = '#8b4513';
-                ctx.fillRect(weapon.x + 3, weapon.y + 10, 4, 15);
-                ctx.fillStyle = '#666';
-                ctx.beginPath();
-                ctx.moveTo(weapon.x, weapon.y + 5);
-                ctx.lineTo(weapon.x + 15, weapon.y + 5);
-                ctx.lineTo(weapon.x + 7, weapon.y + 15);
-                ctx.closePath();
-                ctx.fill();
+                CTX.fillStyle = '#0f0510';
+                CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
+                CTX.fillStyle = '#2a1a2a';
+                for (let y = 0; y < CANVAS.height; y += 16) {
+                    for (let x = 0; x < CANVAS.width; x += 32) {
+                        const offsetX = (y / 16) % 2 === 0 ? 0 : 16;
+                        CTX.fillRect(x + offsetX, y, 30, 14);
+                    }
+                }
+            }
+        }
+
+        function drawScreens() {
+            if (game.paused) {
+                CTX.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
+                CTX.fillStyle = '#fff';
+                CTX.font = 'bold 40px "Press Start 2P"';
+                CTX.textAlign = 'center';
+                CTX.shadowColor = '#8b0000';
+                CTX.shadowBlur = 15;
+                CTX.fillText('PAUSED', CANVAS.width / 2, CANVAS.height / 2);
+                CTX.fillStyle = '#999';
+                CTX.font = '12px "Press Start 2P"';
+                CTX.shadowBlur = 0;
+                CTX.fillText('PRESS P TO RESUME', CANVAS.width / 2, CANVAS.height / 2 + 50);
+                return;
+            }
+            if (!game.running && game.started && game.health <= 0) {
+                CTX.fillStyle = 'rgba(0, 0, 0, 0.95)';
+                CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
+                CTX.fillStyle = '#ff0000';
+                CTX.font = 'bold 60px "Press Start 2P"';
+                CTX.textAlign = 'center';
+                CTX.shadowColor = '#8b0000';
+                CTX.shadowBlur = 25;
+                CTX.fillText('GAME OVER', CANVAS.width / 2, CANVAS.height / 2 - 20);
+                CTX.fillStyle = '#8b0000';
+                CTX.font = 'bold 20px "Press Start 2P"';
+                CTX.shadowBlur = 10;
+                CTX.fillText('YOU HAVE FALLEN', CANVAS.width / 2, CANVAS.height / 2 + 40);
+                CTX.fillStyle = '#ffaa00';
+                CTX.font = '16px "Press Start 2P"';
+                CTX.fillText('KILLS: ' + game.score, CANVAS.width / 2, CANVAS.height / 2 + 75);
+                CTX.fillStyle = '#fff';
+                CTX.font = '12px "Press Start 2P"';
+                CTX.shadowBlur = 5;
+                CTX.fillText('PRESS R TO RESTART', CANVAS.width / 2, CANVAS.height / 2 + 110);
+                CTX.shadowBlur = 0;
+                return;
+            }
+            if (game.gameWon) {
+                CTX.fillStyle = 'rgba(0, 0, 0, 0.9)';
+                CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
+                CTX.fillStyle = '#fff';
+                CTX.font = 'bold 36px "Press Start 2P"';
+                CTX.textAlign = 'center';
+                CTX.shadowColor = '#8b0000';
+                CTX.shadowBlur = 15;
+                CTX.fillText('YOU ARE THE', CANVAS.width / 2, CANVAS.height / 2 - 60);
+                CTX.fillStyle = '#ff3333';
+                CTX.font = 'bold 40px "Press Start 2P"';
+                CTX.shadowBlur = 20;
+                CTX.fillText('PIXEL SLAYER!', CANVAS.width / 2, CANVAS.height / 2 - 10);
+                CTX.fillStyle = '#ffaa00';
+                CTX.font = '16px "Press Start 2P"';
+                CTX.shadowBlur = 10;
+                CTX.fillText('ALL LEVELS COMPLETE', CANVAS.width / 2, CANVAS.height / 2 + 40);
+                CTX.fillText('KILLS: ' + game.score, CANVAS.width / 2, CANVAS.height / 2 + 65);
+                CTX.fillStyle = '#fff';
+                CTX.font = '12px "Press Start 2P"';
+                CTX.shadowBlur = 5;
+                CTX.fillText('PRESS R TO RESTART', CANVAS.width / 2, CANVAS.height / 2 + 100);
+                CTX.shadowBlur = 0;
+            }
+            if (!game.started) {
+                CTX.fillStyle = 'rgba(0, 0, 0, 0.9)';
+                CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
+                CTX.fillStyle = '#fff';
+                CTX.font = 'bold 40px "Press Start 2P"';
+                CTX.textAlign = 'center';
+                CTX.shadowColor = '#8b0000';
+                CTX.shadowBlur = 15;
+                CTX.fillText('PIXEL SLAYER', CANVAS.width / 2, CANVAS.height / 2 - 40);
+                CTX.fillStyle = '#ff3333';
+                CTX.font = 'bold 20px "Press Start 2P"';
+                CTX.shadowBlur = 10;
+                CTX.fillText('PRESS SPACE', CANVAS.width / 2, CANVAS.height / 2 + 30);
+                CTX.fillStyle = '#999';
+                CTX.font = '10px "Press Start 2P"';
+                CTX.shadowBlur = 0;
+                CTX.fillText('DEFEAT 10 ORCS PER LEVEL', CANVAS.width / 2, CANVAS.height / 2 + 70);
+                CTX.fillText('3 LEVELS TOTAL', CANVAS.width / 2, CANVAS.height / 2 + 90);
             }
         }
 
@@ -544,314 +1311,208 @@
                    rect1.y + rect1.height > rect2.y;
         }
 
-        function update() {
-            if (!game.running || game.paused) return;
+        function getAttackBox() {
+            if (player.weapon === 'sword') {
+                return {x: player.x + (player.facing > 0 ? player.width : -48), y: player.y + 8, width: 48, height: 12};
+            } else {
+                return {x: player.x + (player.facing > 0 ? player.width : -70), y: player.y, width: 70, height: 25};
+            }
+        }
 
-            if (keys['ArrowLeft'] || mobileControls.left) {
+        function updatePlayer() {
+            if (keys['ArrowLeft']) {
                 player.x -= player.speed;
                 player.facing = -1;
             }
-            if (keys['ArrowRight'] || mobileControls.right) {
+            if (keys['ArrowRight']) {
                 player.x += player.speed;
                 player.facing = 1;
             }
-            if ((keys['ArrowUp'] || mobileControls.jump) && !player.jumping) {
-                player.velocityY = -12;
+            if (keys['ArrowUp'] && !player.jumping) {
+                player.velocityY = JUMP_POWER;
                 player.jumping = true;
             }
-
-            player.velocityY += 0.5;
+            player.velocityY += GRAVITY;
             player.y += player.velocityY;
-
-            if (player.y >= ground - player.height) {
-                player.y = ground - player.height;
+            if (player.y >= GROUND - player.height) {
+                player.y = GROUND - player.height;
                 player.velocityY = 0;
                 player.jumping = false;
             }
-
-            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-
+            player.x = Math.max(0, Math.min(CANVAS.width - player.width, player.x));
             if (player.attackTimer > 0) {
                 player.attackTimer--;
                 if (player.attackTimer === 0) {
                     player.attacking = false;
                 }
             }
+        }
 
+        function updateOrcs() {
             orcSpawnTimer++;
-            if (orcSpawnTimer > 120 && !game.bossSpawned) {
-                if (game.score >= game.orcsPerLevel * game.level - 1 && orcs.length === 0) {
-                    spawnBoss();
-                } else {
-                    spawnOrc();
-                }
+            
+            if (orcSpawnTimer > ORC_SPAWN_RATE && !game.bossSpawned) {
+                spawnOrc();
                 orcSpawnTimer = 0;
             }
-
+            
             for (let i = orcs.length - 1; i >= 0; i--) {
                 const orc = orcs[i];
                 orc.x -= orc.speed;
-
                 if (checkCollision(player, orc)) {
-                    game.health -= (orc.isBoss ? 1 : 0.5);
+                    game.health -= 0.5;
                     if (game.health <= 0) {
                         game.running = false;
-                        alert('Game Over! Score: ' + game.score);
-                        location.reload();
+                        game.health = 0;
+                        stopMusic();
                     }
                 }
-
-                if (player.attacking && checkCollision(
-                    {x: player.x + (player.facing > 0 ? player.width : -48), y: player.y + 8, width: 48, height: 12},
-                    orc
-                )) {
+                if (player.attacking && checkCollision(getAttackBox(), orc)) {
                     orc.health--;
                     createBloodSplatter(orc.x + orc.width / 2, orc.y + orc.height / 2);
-                    
                     if (orc.health <= 0) {
                         game.score++;
                         spawnWeapon(orc.x + orc.width / 2, orc.y);
+                        createBloodSplatter(orc.x + orc.width / 2, orc.y + orc.height / 2);
+                        createBloodSplatter(orc.x + orc.width / 2 + 15, orc.y + orc.height / 2 - 10);
+                        createBloodSplatter(orc.x + orc.width / 2 - 15, orc.y + orc.height / 2 + 10);
                         orcs.splice(i, 1);
-                        
-                        if (orc.isBoss) {
-                            game.bossSpawned = false;
-                        }
                         
                         if (game.score >= game.orcsPerLevel * game.level) {
                             if (game.level < game.maxLevel) {
                                 game.level++;
-                                game.bossSpawned = false;
-                                createVictoryRain();
-                                setTimeout(function() {
-                                    alert('Level ' + game.level + '! Orcs are getting bigger!');
-                                }, 100);
-                            } else {
-                                game.running = false;
-                                game.gameWon = true;
-                                createVictoryRain();
+                                if (game.level === 2 && !player.battleAxeUnlocked) {
+                                    player.battleAxeUnlocked = true;
+                                    player.weapon = 'battleaxe';
+                                    updateWeaponUI();
+                                    alert('LEVEL 2!\nBATTLE AXE UNLOCKED!\nPRESS Q TO SWITCH WEAPONS');
+                                } else {
+                                    alert('LEVEL ' + game.level + '!');
+                                }
+                            } else if (!game.bossSpawned) {
+                                alert('FINAL BOSS INCOMING!\nTHE DEMON AWAKENS!');
+                                spawnBoss();
                             }
                         }
                     }
                 }
-
-                if (orc.x < -150) {
+                if (orc.x < -50) {
                     orcs.splice(i, 1);
-                    if (orc.isBoss) {
-                        game.bossSpawned = false;
+                }
+            }
+            
+            if (boss.active) {
+                boss.x -= boss.speed;
+                
+                if (boss.x < CANVAS.width / 3) {
+                    boss.x = CANVAS.width / 3;
+                }
+                
+                if (checkCollision(player, {x: boss.x + 15, y: boss.y + 20, width: 50, height: 80})) {
+                    game.health -= 1;
+                    if (game.health <= 0) {
+                        game.running = false;
+                        game.health = 0;
+                        stopMusic();
+                    }
+                }
+                
+                if (player.attacking && checkCollision(getAttackBox(), {x: boss.x + 15, y: boss.y + 20, width: 50, height: 80})) {
+                    boss.health--;
+                    createBloodSplatter(boss.x + boss.width / 2, boss.y + 50);
+                    createBloodSplatter(boss.x + boss.width / 2 + 10, boss.y + 60);
+                    createBloodSplatter(boss.x + boss.width / 2 - 10, boss.y + 40);
+                    
+                    if (boss.health <= 0 && !game.bossDefeated) {
+                        game.bossDefeated = true;
+                        boss.active = false;
+                        for (let b = 0; b < 5; b++) {
+                            createBloodSplatter(boss.x + Math.random() * boss.width, boss.y + Math.random() * boss.height);
+                        }
+                        createBloodRain();
+                        setTimeout(() => {
+                            game.running = false;
+                            game.gameWon = true;
+                        }, 3000);
                     }
                 }
             }
+        }
 
+        function updateWeapons() {
             for (let i = weapons.length - 1; i >= 0; i--) {
                 const weapon = weapons[i];
                 weapon.velocityY += weapon.gravity;
                 weapon.y += weapon.velocityY;
-
-                if (weapon.y > ground - 20) {
-                    weapon.y = ground - 20;
+                if (weapon.y > GROUND - 20) {
+                    weapon.y = GROUND - 20;
                     weapon.velocityY = 0;
                 }
-
-                if (checkCollision(player, {x: weapon.x, y: weapon.y, width: 15, height: 20})) {
-                    if (weapon.type === 'sword') {
+                if (checkCollision(player, {x: weapon.x - 5, y: weapon.y, width: 40, height: 70})) {
+                    if (weapon.type === 'potion') {
+                        game.potions++;
+                    } else if (weapon.type === 'sword') {
                         game.swords++;
-                    } else {
+                    } else if (weapon.type === 'axe') {
                         game.axes++;
                     }
                     weapons.splice(i, 1);
                 }
             }
+        }
 
-            for (let i = bloodDrops.length - 1; i >= 0; i--) {
-                const drop = bloodDrops[i];
-                drop.velocityY += drop.gravity;
-                drop.x += drop.velocityX;
-                drop.y += drop.velocityY;
-                drop.life--;
-                
-                if (drop.life <= 0 || drop.y > canvas.height) {
-                    bloodDrops.splice(i, 1);
+        function updateBloodParticles() {
+            for (let i = bloodParticles.length - 1; i >= 0; i--) {
+                bloodParticles[i].update();
+                if (bloodParticles[i].isDead()) {
+                    bloodParticles.splice(i, 1);
                 }
             }
+        }
 
-            if (showVictoryRain) {
-                victoryRainTimer--;
-                if (victoryRainTimer <= 0) {
-                    showVictoryRain = false;
-                    victoryDrops.length = 0;
-                }
-                
-                for (let i = 0; i < victoryDrops.length; i++) {
-                    const drop = victoryDrops[i];
-                    drop.y += drop.velocityY;
+        function updateBloodRain() {
+            if (bloodRainTimer > 0) {
+                bloodRainTimer--;
+                for (let i = bloodRainParticles.length - 1; i >= 0; i--) {
+                    const drop = bloodRainParticles[i];
+                    drop.y += drop.speed;
                     
-                    if (drop.y > canvas.height) {
+                    if (drop.y > CANVAS.height) {
                         drop.y = -10;
-                        drop.x = Math.random() * canvas.width;
+                        drop.x = Math.random() * CANVAS.width;
                     }
                 }
             }
+        }
 
-            document.getElementById('score').textContent = game.score;
-            document.getElementById('level').textContent = game.level;
-            document.getElementById('swords').textContent = game.swords;
-            document.getElementById('axes').textContent = game.axes;
-            document.getElementById('health').textContent = Math.max(0, Math.floor(game.health));
+        function update() {
+            if (!game.running || game.paused) return;
+            updatePlayer();
+            updateOrcs();
+            updateWeapons();
+            updateBloodParticles();
+            updateBloodRain();
+            updateUI();
         }
 
         function draw() {
-            ctx.fillStyle = '#0a0a1a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
             
-            ctx.fillStyle = '#ffffff';
-            for (let i = 0; i < 50; i++) {
-                const starX = (i * 47 + Date.now() * 0.01) % canvas.width;
-                const starY = (i * 67) % (canvas.height - 100);
-                ctx.fillRect(starX, starY, 2, 2);
+            if (bloodRainTimer > 0) {
+                bloodRainParticles.forEach(drop => {
+                    CTX.fillStyle = '#8b0000';
+                    CTX.fillRect(drop.x, drop.y, 2, drop.length);
+                    CTX.fillStyle = '#ff0000';
+                    CTX.fillRect(drop.x, drop.y, 2, 3);
+                });
             }
             
-            ctx.fillStyle = '#4a2a6a';
-            ctx.beginPath();
-            ctx.arc(650, 80, 30, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.fillStyle = '#6a4a3a';
-            ctx.beginPath();
-            ctx.arc(150, 120, 20, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = '#3d3d5c';
-            ctx.fillRect(0, ground, canvas.width, canvas.height - ground);
-            
-            ctx.strokeStyle = '#2a2a4a';
-            ctx.lineWidth = 2;
-            for (let y = ground; y < canvas.height; y += 20) {
-                for (let x = 0; x < canvas.width; x += 40) {
-                    ctx.strokeRect(x, y, 40, 20);
-                }
-            }
-            
-            const windowPositions = [
-                {x: 100, y: ground - 120},
-                {x: 300, y: ground - 150},
-                {x: 500, y: ground - 100},
-                {x: 650, y: ground - 140}
-            ];
-            
-            for (let p = 0; p < windowPositions.length; p++) {
-                const pos = windowPositions[p];
-                ctx.fillStyle = '#2a2a3a';
-                ctx.fillRect(pos.x - 5, pos.y - 5, 60, 80);
-                
-                ctx.fillStyle = '#0a0a1a';
-                ctx.fillRect(pos.x, pos.y, 50, 70);
-                
-                ctx.fillStyle = '#ffffff';
-                for (let i = 0; i < 8; i++) {
-                    const sx = pos.x + (i * 13) % 45 + 2;
-                    const sy = pos.y + (i * 17) % 65 + 2;
-                    ctx.fillRect(sx, sy, 1, 1);
-                }
-                
-                ctx.fillStyle = '#1a1a2a';
-                ctx.fillRect(pos.x, pos.y + 33, 50, 4);
-                ctx.fillRect(pos.x + 23, pos.y, 4, 70);
-            }
-
-            if (showVictoryRain) {
-                for (let i = 0; i < victoryDrops.length; i++) {
-                    const drop = victoryDrops[i];
-                    ctx.fillStyle = '#dd0000';
-                    ctx.fillRect(drop.x, drop.y, drop.size, drop.size * 2.5);
-                    ctx.fillStyle = '#ff3333';
-                    ctx.fillRect(drop.x + 1, drop.y + 1, Math.max(1, drop.size - 2), drop.size * 1.5);
-                }
-            }
-
-            for (let i = 0; i < weapons.length; i++) {
-                drawWeapon(weapons[i]);
-            }
-
-            for (let i = 0; i < orcs.length; i++) {
-                drawOrc(orcs[i]);
-            }
-
+            bloodParticles.forEach(particle => particle.draw());
+            weapons.forEach(drawWeapon);
+            orcs.forEach(drawOrc);
+            drawDemonBoss();
             drawPlayer();
-
-            for (let i = 0; i < bloodDrops.length; i++) {
-                const drop = bloodDrops[i];
-                const opacity = drop.life / 60;
-                ctx.fillStyle = 'rgba(200, 0, 0, ' + opacity + ')';
-                ctx.fillRect(drop.x, drop.y, 5, 5);
-                ctx.fillStyle = 'rgba(139, 0, 0, ' + opacity + ')';
-                ctx.fillRect(drop.x + 1, drop.y + 1, 3, 3);
-            }
-
-            let weaponX = 10;
-            for (let i = 0; i < game.swords; i++) {
-                ctx.fillStyle = '#c0c0c0';
-                ctx.fillRect(weaponX, 10, 3, 10);
-                weaponX += 6;
-            }
-            weaponX = 10;
-            for (let i = 0; i < game.axes; i++) {
-                ctx.fillStyle = '#666';
-                ctx.fillRect(weaponX, 25, 5, 5);
-                weaponX += 8;
-            }
-            
-            if (game.paused) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.fillStyle = '#FFD700';
-                ctx.font = 'bold 50px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
-                
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '20px Arial';
-                ctx.fillText('Press P to Resume', canvas.width / 2, canvas.height / 2 + 50);
-            }
-            
-            if (game.gameWon) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.fillStyle = '#FFD700';
-                ctx.font = 'bold 60px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('YOU ARE THE', canvas.width / 2, canvas.height / 2 - 60);
-                ctx.fillText('PIXEL SLAYER!', canvas.width / 2, canvas.height / 2);
-                
-                ctx.fillStyle = '#00ff88';
-                ctx.font = 'bold 24px Arial';
-                ctx.fillText('All 3 Levels Completed!', canvas.width / 2, canvas.height / 2 + 60);
-                ctx.fillText('Total Orcs Defeated: ' + game.score, canvas.width / 2, canvas.height / 2 + 95);
-                
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '20px Arial';
-                ctx.fillText('Press R to Restart', canvas.width / 2, canvas.height / 2 + 135);
-            }
-            
-            if (!game.started) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.fillStyle = '#FFD700';
-                ctx.font = 'bold 50px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('PIXEL SLAYER', canvas.width / 2, canvas.height / 2 - 40);
-                
-                ctx.fillStyle = '#00ff88';
-                ctx.font = 'bold 28px Arial';
-                ctx.fillText('Press SPACE to Start', canvas.width / 2, canvas.height / 2 + 40);
-                
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '18px Arial';
-                ctx.fillText('Defeat 10 orcs per level - 3 Levels Total', canvas.width / 2, canvas.height / 2 + 85);
-                ctx.fillText('Face the BOSS at the end of each level!', canvas.width / 2, canvas.height / 2 + 110);
-            }
+            drawScreens();
         }
 
         function gameLoop() {
@@ -859,6 +1520,9 @@
             draw();
             requestAnimationFrame(gameLoop);
         }
+
+        setupMobileControls();
+        gameLoop();
     </script>
 </body>
 </html>
