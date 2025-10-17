@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Slayer</title>
+    <title>Pixel Slayer - Enhanced</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         * {
@@ -243,7 +243,7 @@
     </div>
     <div id="instructions">
         ARROW KEYS - MOVE | SPACE - ATTACK | H - USE POTION | P - PAUSE | <span id="weaponSwitch"></span>R - RESTART<br>
-        DEFEAT 10 ORCS PER LEVEL!
+        DEFEAT 10 ORCS PER LEVEL! BEWARE THE GHOULS!
     </div>
 
     <div id="mobileControls">
@@ -343,8 +343,8 @@
 
         const boss = {
             active: false,
-            x: 0, y: 0, width: 80, height: 100,
-            speed: 1.5, health: 5, maxHealth: 5,
+            x: 0, y: 0, width: 100, height: 120,
+            speed: 1.5, health: 3, maxHealth: 3,
             attackCooldown: 0, walkFrame: 0
         };
 
@@ -359,9 +359,13 @@
 
         const keys = {};
         const orcs = [];
+        const ghouls = [];
         const weapons = [];
         const bloodParticles = [];
+        const poofParticles = [];
         let orcSpawnTimer = 0;
+        let ghoulSpawnTimer = 0;
+        const torchFlicker = [];
 
         class BloodParticle {
             constructor(x, y) {
@@ -393,6 +397,47 @@
             isDead() {
                 return this.life <= 0;
             }
+        }
+
+        class PoofParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4 - 2;
+                this.size = Math.random() * 8 + 4;
+                this.life = 30;
+                this.maxLife = 30;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.95;
+                this.vy *= 0.95;
+                this.size += 0.5;
+                this.life--;
+            }
+            draw() {
+                const alpha = this.life / this.maxLife;
+                CTX.fillStyle = `rgba(200, 200, 220, ${alpha * 0.6})`;
+                CTX.globalAlpha = alpha;
+                CTX.beginPath();
+                CTX.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                CTX.fill();
+                CTX.globalAlpha = 1;
+            }
+            isDead() {
+                return this.life <= 0;
+            }
+        }
+
+        for (let i = 0; i < 12; i++) {
+            torchFlicker.push({
+                x: 80 + i * 65,
+                y: GROUND - 180 + Math.random() * 20,
+                flicker: Math.random() * Math.PI * 2,
+                speed: 0.1 + Math.random() * 0.1
+            });
         }
 
         function playNote(frequency, duration, volume, waveType) {
@@ -635,6 +680,22 @@
             });
         }
 
+        function spawnGhoul() {
+            const sizeMultiplier = 1 + (game.level - 1) * 0.15;
+            ghouls.push({
+                x: CANVAS.width + 50,
+                y: GROUND - (45 * sizeMultiplier),
+                width: 35 * sizeMultiplier,
+                height: 45 * sizeMultiplier,
+                speed: 1.5 + Math.random() * 0.5,
+                health: 2,
+                maxHealth: 2,
+                level: game.level,
+                floatFrame: Math.random() * Math.PI * 2,
+                opacity: 0.7 + Math.random() * 0.3
+            });
+        }
+
         function spawnPotion(x, y) {
             weapons.push({
                 x: x, y: y,
@@ -665,6 +726,12 @@
         function createBloodSplatter(x, y) {
             for (let i = 0; i < 15; i++) {
                 bloodParticles.push(new BloodParticle(x, y));
+            }
+        }
+
+        function createPoofEffect(x, y) {
+            for (let i = 0; i < 10; i++) {
+                poofParticles.push(new PoofParticle(x, y));
             }
         }
 
@@ -847,65 +914,200 @@
 
         function drawOrc(orc) {
             const colors = [
-                {body: '#2d5016', head: '#4a7c2c'},
-                {body: '#5a1a3a', head: '#8a2a5a'},
-                {body: '#1a2a5a', head: '#2a4a8a'}
+                {body: '#2d5016', head: '#4a7c2c', dark: '#1a3010'},
+                {body: '#5a1a3a', head: '#8a2a5a', dark: '#3a0a2a'},
+                {body: '#1a2a5a', head: '#2a4a8a', dark: '#0a1a3a'}
             ];
             const color = colors[orc.level - 1];
             orc.walkFrame = (orc.walkFrame + 0.1) % (Math.PI * 2);
             const legOffset = Math.sin(orc.walkFrame) * 3;
+            
+            // Legs with rounded feet
             CTX.fillStyle = color.body;
-            const legWidth = orc.width * 0.25;
+            const legWidth = orc.width * 0.22;
             const legHeight = orc.height * 0.4;
-            CTX.fillRect(orc.x + orc.width * 0.2, orc.y + orc.height - legHeight + legOffset, legWidth, legHeight);
-            CTX.fillRect(orc.x + orc.width * 0.55, orc.y + orc.height - legHeight - legOffset, legWidth, legHeight);
+            
+            // Left leg
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.28, orc.y + orc.height - legHeight/2 + legOffset, legWidth/2, legHeight/2, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Right leg
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.62, orc.y + orc.height - legHeight/2 - legOffset, legWidth/2, legHeight/2, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Feet
             CTX.fillStyle = '#1a1a1a';
-            CTX.fillRect(orc.x + orc.width * 0.18, orc.y + orc.height + legOffset, legWidth * 1.2, orc.height * 0.1);
-            CTX.fillRect(orc.x + orc.width * 0.53, orc.y + orc.height - legOffset, legWidth * 1.2, orc.height * 0.1);
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.28, orc.y + orc.height - 3 + legOffset, legWidth * 0.7, orc.height * 0.08, 0, 0, Math.PI * 2);
+            CTX.fill();
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.62, orc.y + orc.height - 3 - legOffset, legWidth * 0.7, orc.height * 0.08, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Rounded body
             CTX.fillStyle = color.body;
-            CTX.fillRect(orc.x, orc.y, orc.width, orc.height * 0.7);
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.5, orc.y + orc.height * 0.4, orc.width * 0.45, orc.height * 0.38, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Belly highlight
+            CTX.fillStyle = color.dark;
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.5, orc.y + orc.height * 0.45, orc.width * 0.3, orc.height * 0.25, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Arms - rounded
+            CTX.fillStyle = color.body;
+            // Left arm
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.15, orc.y + orc.height * 0.35, orc.width * 0.12, orc.height * 0.25, -0.3, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Right arm
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.85, orc.y + orc.height * 0.35, orc.width * 0.12, orc.height * 0.25, 0.3, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Clawed hands
+            CTX.fillStyle = color.dark;
+            for (let c = 0; c < 3; c++) {
+                CTX.fillRect(orc.x + orc.width * 0.12 + c * 2, orc.y + orc.height * 0.5, 1, 4);
+                CTX.fillRect(orc.x + orc.width * 0.83 + c * 2, orc.y + orc.height * 0.5, 1, 4);
+            }
+            
+            // Rounded head
             CTX.fillStyle = color.head;
-            const headWidth = orc.width * 0.6;
-            const headHeight = orc.height * 0.45;
-            CTX.fillRect(orc.x + orc.width * 0.2, orc.y - headHeight, headWidth, headHeight);
+            const headWidth = orc.width * 0.55;
+            const headHeight = orc.height * 0.42;
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.5, orc.y + orc.height * 0.08, headWidth * 0.5, headHeight * 0.5, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Pointed ears
+            CTX.fillStyle = color.head;
+            // Left ear
+            CTX.beginPath();
+            CTX.moveTo(orc.x + orc.width * 0.2, orc.y + orc.height * 0.08);
+            CTX.lineTo(orc.x + orc.width * 0.05, orc.y + orc.height * 0.02);
+            CTX.lineTo(orc.x + orc.width * 0.15, orc.y + orc.height * 0.12);
+            CTX.closePath();
+            CTX.fill();
+            
+            // Right ear
+            CTX.beginPath();
+            CTX.moveTo(orc.x + orc.width * 0.8, orc.y + orc.height * 0.08);
+            CTX.lineTo(orc.x + orc.width * 0.95, orc.y + orc.height * 0.02);
+            CTX.lineTo(orc.x + orc.width * 0.85, orc.y + orc.height * 0.12);
+            CTX.closePath();
+            CTX.fill();
+            
+            // Curved horns
             CTX.fillStyle = '#2a2a2a';
-            const hornHeight = orc.height * 0.5;
+            const hornHeight = orc.height * 0.4;
+            
+            // Left horn - curved
             CTX.beginPath();
-            CTX.moveTo(orc.x + orc.width * 0.25, orc.y - headHeight);
-            CTX.quadraticCurveTo(orc.x + orc.width * 0.1, orc.y - headHeight - hornHeight * 0.5, orc.x + orc.width * 0.05, orc.y - headHeight - hornHeight);
-            CTX.lineTo(orc.x + orc.width * 0.15, orc.y - headHeight - hornHeight * 0.9);
-            CTX.quadraticCurveTo(orc.x + orc.width * 0.18, orc.y - headHeight - hornHeight * 0.4, orc.x + orc.width * 0.3, orc.y - headHeight);
+            CTX.moveTo(orc.x + orc.width * 0.3, orc.y - headHeight * 0.3);
+            CTX.quadraticCurveTo(orc.x + orc.width * 0.15, orc.y - headHeight * 0.8, orc.x + orc.width * 0.1, orc.y - hornHeight);
+            CTX.lineTo(orc.x + orc.width * 0.15, orc.y - hornHeight * 0.95);
+            CTX.quadraticCurveTo(orc.x + orc.width * 0.2, orc.y - headHeight * 0.7, orc.x + orc.width * 0.32, orc.y - headHeight * 0.25);
             CTX.closePath();
             CTX.fill();
+            
+            // Right horn - curved
             CTX.beginPath();
-            CTX.moveTo(orc.x + orc.width * 0.75, orc.y - headHeight);
-            CTX.quadraticCurveTo(orc.x + orc.width * 0.9, orc.y - headHeight - hornHeight * 0.5, orc.x + orc.width * 0.95, orc.y - headHeight - hornHeight);
-            CTX.lineTo(orc.x + orc.width * 0.85, orc.y - headHeight - hornHeight * 0.9);
-            CTX.quadraticCurveTo(orc.x + orc.width * 0.82, orc.y - headHeight - hornHeight * 0.4, orc.x + orc.width * 0.7, orc.y - headHeight);
+            CTX.moveTo(orc.x + orc.width * 0.7, orc.y - headHeight * 0.3);
+            CTX.quadraticCurveTo(orc.x + orc.width * 0.85, orc.y - headHeight * 0.8, orc.x + orc.width * 0.9, orc.y - hornHeight);
+            CTX.lineTo(orc.x + orc.width * 0.85, orc.y - hornHeight * 0.95);
+            CTX.quadraticCurveTo(orc.x + orc.width * 0.8, orc.y - headHeight * 0.7, orc.x + orc.width * 0.68, orc.y - headHeight * 0.25);
             CTX.closePath();
             CTX.fill();
+            
+            // Horn ridges
             CTX.fillStyle = '#444';
-            CTX.fillRect(orc.x + orc.width * 0.12, orc.y - headHeight - hornHeight * 0.8, orc.width * 0.04, hornHeight * 0.3);
-            CTX.fillRect(orc.x + orc.width * 0.84, orc.y - headHeight - hornHeight * 0.8, orc.width * 0.04, hornHeight * 0.3);
+            CTX.fillRect(orc.x + orc.width * 0.14, orc.y - hornHeight * 0.7, orc.width * 0.03, hornHeight * 0.25);
+            CTX.fillRect(orc.x + orc.width * 0.83, orc.y - hornHeight * 0.7, orc.width * 0.03, hornHeight * 0.25);
+            
+            // Glowing evil red eyes
+            CTX.shadowColor = '#ff0000';
+            CTX.shadowBlur = 8;
             CTX.fillStyle = '#ff0000';
-            const eyeSize = orc.width * 0.12;
-            CTX.fillRect(orc.x + orc.width * 0.3, orc.y - headHeight * 0.6, eyeSize, eyeSize);
-            CTX.fillRect(orc.x + orc.width * 0.55, orc.y - headHeight * 0.6, eyeSize, eyeSize);
+            const eyeSize = orc.width * 0.13;
+            
+            // Eyes - slightly oval and menacing
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.35, orc.y + orc.height * 0.08, eyeSize * 0.45, eyeSize * 0.55, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.65, orc.y + orc.height * 0.08, eyeSize * 0.45, eyeSize * 0.55, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Eye highlights
             CTX.fillStyle = '#ff6666';
-            const glowSize = eyeSize * 0.5;
-            CTX.fillRect(orc.x + orc.width * 0.32, orc.y - headHeight * 0.58, glowSize, glowSize);
-            CTX.fillRect(orc.x + orc.width * 0.57, orc.y - headHeight * 0.58, glowSize, glowSize);
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.36, orc.y + orc.height * 0.07, eyeSize * 0.25, eyeSize * 0.35, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.66, orc.y + orc.height * 0.07, eyeSize * 0.25, eyeSize * 0.35, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            CTX.shadowBlur = 0;
+            
+            // Evil grin with sharp teeth
+            CTX.strokeStyle = '#1a1a1a';
+            CTX.lineWidth = 2;
+            CTX.beginPath();
+            CTX.arc(orc.x + orc.width * 0.5, orc.y + orc.height * 0.15, orc.width * 0.2, 0.2, Math.PI - 0.2);
+            CTX.stroke();
+            
+            // Sharp fangs/tusks
             CTX.fillStyle = '#eee';
-            const tuskWidth = orc.width * 0.08;
-            const tuskHeight = headHeight * 0.3;
-            CTX.fillRect(orc.x + orc.width * 0.28, orc.y - headHeight * 0.2, tuskWidth, tuskHeight);
-            CTX.fillRect(orc.x + orc.width * 0.62, orc.y - headHeight * 0.2, tuskWidth, tuskHeight);
+            const tuskWidth = orc.width * 0.07;
+            const tuskHeight = headHeight * 0.35;
+            
+            // Left tusk
+            CTX.beginPath();
+            CTX.moveTo(orc.x + orc.width * 0.35, orc.y + orc.height * 0.18);
+            CTX.lineTo(orc.x + orc.width * 0.32, orc.y + orc.height * 0.18 + tuskHeight);
+            CTX.lineTo(orc.x + orc.width * 0.38, orc.y + orc.height * 0.18 + tuskHeight * 0.8);
+            CTX.closePath();
+            CTX.fill();
+            
+            // Right tusk
+            CTX.beginPath();
+            CTX.moveTo(orc.x + orc.width * 0.65, orc.y + orc.height * 0.18);
+            CTX.lineTo(orc.x + orc.width * 0.68, orc.y + orc.height * 0.18 + tuskHeight);
+            CTX.lineTo(orc.x + orc.width * 0.62, orc.y + orc.height * 0.18 + tuskHeight * 0.8);
+            CTX.closePath();
+            CTX.fill();
+            
+            // Extra teeth
+            CTX.fillStyle = '#ddd';
+            for (let t = 0; t < 4; t++) {
+                const tx = orc.x + orc.width * (0.4 + t * 0.06);
+                CTX.fillRect(tx, orc.y + orc.height * 0.2, 2, 3);
+            }
+            
+            // Nose
+            CTX.fillStyle = color.dark;
+            CTX.beginPath();
+            CTX.ellipse(orc.x + orc.width * 0.5, orc.y + orc.height * 0.12, orc.width * 0.08, orc.height * 0.05, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // Nostrils
+            CTX.fillStyle = '#000';
+            CTX.fillRect(orc.x + orc.width * 0.47, orc.y + orc.height * 0.12, 2, 2);
+            CTX.fillRect(orc.x + orc.width * 0.53, orc.y + orc.height * 0.12, 2, 2);
 
             if (orc.level === 3 && orc.maxHealth) {
                 const barWidth = orc.width;
                 const barHeight = 6;
                 const barX = orc.x;
-                const barY = orc.y - headHeight - hornHeight - 15;
+                const barY = orc.y - headHeight - hornHeight - 10;
                 CTX.fillStyle = '#2a0000';
                 CTX.fillRect(barX, barY, barWidth, barHeight);
                 const healthPercent = orc.health / orc.maxHealth;
@@ -917,6 +1119,81 @@
             }
         }
 
+        function drawGhoul(ghoul) {
+            ghoul.floatFrame += 0.08;
+            const hover = Math.sin(ghoul.floatFrame) * 8;
+            const floatY = ghoul.y + hover;
+            
+            CTX.globalAlpha = ghoul.opacity * (0.6 + Math.sin(ghoul.floatFrame * 2) * 0.2);
+            
+            const gradient = CTX.createRadialGradient(
+                ghoul.x + ghoul.width / 2, floatY + ghoul.height / 2, 5,
+                ghoul.x + ghoul.width / 2, floatY + ghoul.height / 2, ghoul.width * 0.8
+            );
+            gradient.addColorStop(0, 'rgba(220, 220, 255, 0.3)');
+            gradient.addColorStop(1, 'rgba(150, 150, 200, 0)');
+            CTX.fillStyle = gradient;
+            CTX.fillRect(ghoul.x - ghoul.width * 0.3, floatY, ghoul.width * 1.6, ghoul.height);
+            
+            CTX.fillStyle = '#c8c8dc';
+            CTX.beginPath();
+            CTX.moveTo(ghoul.x + ghoul.width * 0.5, floatY);
+            CTX.quadraticCurveTo(ghoul.x - ghoul.width * 0.2, floatY + ghoul.height * 0.3, ghoul.x, floatY + ghoul.height * 0.5);
+            CTX.quadraticCurveTo(ghoul.x - ghoul.width * 0.1, floatY + ghoul.height * 0.8, ghoul.x + ghoul.width * 0.15, floatY + ghoul.height);
+            
+            for (let i = 0; i < 5; i++) {
+                const wispX = ghoul.x + ghoul.width * (0.15 + i * 0.17);
+                const wispDepth = Math.sin(ghoul.floatFrame + i) * 5;
+                CTX.lineTo(wispX, floatY + ghoul.height + wispDepth);
+            }
+            
+            CTX.lineTo(ghoul.x + ghoul.width * 0.85, floatY + ghoul.height);
+            CTX.quadraticCurveTo(ghoul.x + ghoul.width * 1.1, floatY + ghoul.height * 0.8, ghoul.x + ghoul.width, floatY + ghoul.height * 0.5);
+            CTX.quadraticCurveTo(ghoul.x + ghoul.width * 1.2, floatY + ghoul.height * 0.3, ghoul.x + ghoul.width * 0.5, floatY);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.fillStyle = '#a8a8bc';
+            CTX.globalAlpha = ghoul.opacity * 0.5;
+            CTX.beginPath();
+            CTX.moveTo(ghoul.x + ghoul.width * 0.5, floatY + ghoul.height * 0.3);
+            CTX.quadraticCurveTo(ghoul.x + ghoul.width * 0.2, floatY + ghoul.height * 0.6, ghoul.x + ghoul.width * 0.3, floatY + ghoul.height * 0.9);
+            CTX.lineTo(ghoul.x + ghoul.width * 0.7, floatY + ghoul.height * 0.9);
+            CTX.quadraticCurveTo(ghoul.x + ghoul.width * 0.8, floatY + ghoul.height * 0.6, ghoul.x + ghoul.width * 0.5, floatY + ghoul.height * 0.3);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.globalAlpha = ghoul.opacity;
+            
+            CTX.fillStyle = '#e8e8f8';
+            CTX.beginPath();
+            CTX.ellipse(ghoul.x + ghoul.width * 0.5, floatY + ghoul.height * 0.25, ghoul.width * 0.35, ghoul.height * 0.2, 0, 0, Math.PI * 2);
+            CTX.fill();
+            
+            const eyeGlow = 0.3 + Math.sin(ghoul.floatFrame * 3) * 0.2;
+            CTX.shadowColor = '#ff0000';
+            CTX.shadowBlur = 15;
+            
+            CTX.fillStyle = '#ff0000';
+            const eyeSize = ghoul.width * 0.15;
+            CTX.fillRect(ghoul.x + ghoul.width * 0.28, floatY + ghoul.height * 0.2, eyeSize, eyeSize * 1.2);
+            CTX.fillRect(ghoul.x + ghoul.width * 0.57, floatY + ghoul.height * 0.2, eyeSize, eyeSize * 1.2);
+            
+            CTX.fillStyle = '#ff6666';
+            CTX.fillRect(ghoul.x + ghoul.width * 0.3, floatY + ghoul.height * 0.22, eyeSize * 0.5, eyeSize * 0.6);
+            CTX.fillRect(ghoul.x + ghoul.width * 0.59, floatY + ghoul.height * 0.22, eyeSize * 0.5, eyeSize * 0.6);
+            
+            CTX.shadowBlur = 0;
+            
+            CTX.globalAlpha = ghoul.opacity * 0.3;
+            CTX.fillStyle = '#b8b8cc';
+            for (let i = 1; i <= 3; i++) {
+                CTX.fillRect(ghoul.x - i * 8, floatY + ghoul.height * 0.4, 6, ghoul.height * 0.3);
+            }
+            
+            CTX.globalAlpha = 1;
+        }
+
         function drawDemonBoss() {
             if (!boss.active) return;
             
@@ -926,106 +1203,152 @@
             const bx = boss.x;
             const by = boss.y + hover;
             
+            // Larger, more menacing wings
             CTX.fillStyle = '#2a0a0a';
             CTX.beginPath();
             CTX.moveTo(bx, by + 20);
-            CTX.quadraticCurveTo(bx - 40, by, bx - 50, by + 30);
-            CTX.quadraticCurveTo(bx - 35, by + 40, bx - 20, by + 35);
+            CTX.quadraticCurveTo(bx - 50, by - 10, bx - 65, by + 30);
+            CTX.quadraticCurveTo(bx - 45, by + 50, bx - 25, by + 40);
             CTX.quadraticCurveTo(bx - 15, by + 25, bx, by + 30);
             CTX.closePath();
             CTX.fill();
             
             CTX.beginPath();
             CTX.moveTo(bx + boss.width, by + 20);
-            CTX.quadraticCurveTo(bx + boss.width + 40, by, bx + boss.width + 50, by + 30);
-            CTX.quadraticCurveTo(bx + boss.width + 35, by + 40, bx + boss.width + 20, by + 35);
+            CTX.quadraticCurveTo(bx + boss.width + 50, by - 10, bx + boss.width + 65, by + 30);
+            CTX.quadraticCurveTo(bx + boss.width + 45, by + 50, bx + boss.width + 25, by + 40);
             CTX.quadraticCurveTo(bx + boss.width + 15, by + 25, bx + boss.width, by + 30);
             CTX.closePath();
             CTX.fill();
             
+            // Wing claws
             CTX.fillStyle = '#4a0a0a';
             CTX.beginPath();
             CTX.moveTo(bx - 10, by + 22);
-            CTX.lineTo(bx - 35, by + 15);
-            CTX.lineTo(bx - 25, by + 30);
+            CTX.lineTo(bx - 45, by + 10);
+            CTX.lineTo(bx - 32, by + 32);
             CTX.closePath();
             CTX.fill();
             
             CTX.beginPath();
             CTX.moveTo(bx + boss.width + 10, by + 22);
-            CTX.lineTo(bx + boss.width + 35, by + 15);
-            CTX.lineTo(bx + boss.width + 25, by + 30);
+            CTX.lineTo(bx + boss.width + 45, by + 10);
+            CTX.lineTo(bx + boss.width + 32, by + 32);
             CTX.closePath();
             CTX.fill();
             
+            // Muscular torso
             CTX.fillStyle = '#6a0a0a';
-            CTX.fillRect(bx + 15, by + 20, 50, 60);
+            CTX.fillRect(bx + 18, by + 20, 64, 70);
             
+            // Muscle definition
             CTX.fillStyle = '#8a1a1a';
-            CTX.fillRect(bx + 20, by + 25, 20, 15);
-            CTX.fillRect(bx + 45, by + 25, 20, 15);
-            CTX.fillRect(bx + 30, by + 45, 20, 25);
+            CTX.fillRect(bx + 25, by + 28, 24, 18);
+            CTX.fillRect(bx + 53, by + 28, 24, 18);
+            CTX.fillRect(bx + 36, by + 52, 28, 30);
             
+            // Powerful arms
             CTX.fillStyle = '#6a0a0a';
-            CTX.fillRect(bx + 5, by + 30, 15, 35);
-            CTX.fillRect(bx + 60, by + 30, 15, 35);
+            CTX.fillRect(bx + 5, by + 35, 18, 40);
+            CTX.fillRect(bx + 77, by + 35, 18, 40);
             
+            // Clawed hands with longer claws
             CTX.fillStyle = '#1a1a1a';
-            for (let i = 0; i < 3; i++) {
-                CTX.fillRect(bx + 6 + i * 4, by + 65, 3, 10);
-                CTX.fillRect(bx + 61 + i * 4, by + 65, 3, 10);
+            for (let i = 0; i < 4; i++) {
+                CTX.fillRect(bx + 6 + i * 4, by + 75, 3, 12);
+                CTX.fillRect(bx + 78 + i * 4, by + 75, 3, 12);
             }
             
+            // Strong legs
             CTX.fillStyle = '#5a0a0a';
-            CTX.fillRect(bx + 22, by + 80, 14, 20);
-            CTX.fillRect(bx + 44, by + 80, 14, 20);
+            CTX.fillRect(bx + 26, by + 92, 18, 28);
+            CTX.fillRect(bx + 56, by + 92, 18, 28);
             
+            // Hooves
             CTX.fillStyle = '#000';
-            CTX.fillRect(bx + 20, by + 98, 18, 6);
-            CTX.fillRect(bx + 42, by + 98, 18, 6);
+            CTX.fillRect(bx + 22, by + 118, 24, 8);
+            CTX.fillRect(bx + 54, by + 118, 24, 8);
             
+            // Demonic head
             CTX.fillStyle = '#8a1a1a';
-            CTX.fillRect(bx + 25, by - 5, 30, 30);
+            CTX.fillRect(bx + 28, by - 8, 44, 38);
             
+            // MASSIVE DEMON HORNS - Much bigger and more imposing
             CTX.fillStyle = '#1a1a1a';
+            const hornSize = 45; // Increased from previous smaller size
+            
+            // Left horn - massive curved horn
             CTX.beginPath();
-            CTX.moveTo(bx + 27, by);
-            CTX.quadraticCurveTo(bx + 15, by - 15, bx + 10, by - 25);
-            CTX.lineTo(bx + 15, by - 23);
-            CTX.quadraticCurveTo(bx + 22, by - 10, bx + 30, by);
+            CTX.moveTo(bx + 32, by + 2);
+            CTX.quadraticCurveTo(bx + 10, by - 25, bx - 5, by - 45);
+            CTX.lineTo(bx, by - 42);
+            CTX.quadraticCurveTo(bx + 18, by - 20, bx + 36, by + 2);
+            CTX.closePath();
+            CTX.fill();
+            
+            // Right horn - massive curved horn
+            CTX.beginPath();
+            CTX.moveTo(bx + 68, by + 2);
+            CTX.quadraticCurveTo(bx + 90, by - 25, bx + 105, by - 45);
+            CTX.lineTo(bx + 100, by - 42);
+            CTX.quadraticCurveTo(bx + 82, by - 20, bx + 64, by + 2);
+            CTX.closePath();
+            CTX.fill();
+            
+            // Horn ridges and details - make them look more demonic
+            CTX.fillStyle = '#2a2a2a';
+            for (let r = 0; r < 4; r++) {
+                CTX.fillRect(bx + 8 - r * 3, by - 10 - r * 8, 4, 3);
+                CTX.fillRect(bx + 92 + r * 3, by - 10 - r * 8, 4, 3);
+            }
+            
+            // Additional smaller horns/spikes on head
+            CTX.fillStyle = '#3a3a3a';
+            CTX.beginPath();
+            CTX.moveTo(bx + 42, by - 5);
+            CTX.lineTo(bx + 38, by - 18);
+            CTX.lineTo(bx + 46, by - 5);
             CTX.closePath();
             CTX.fill();
             
             CTX.beginPath();
-            CTX.moveTo(bx + 53, by);
-            CTX.quadraticCurveTo(bx + 65, by - 15, bx + 70, by - 25);
-            CTX.lineTo(bx + 65, by - 23);
-            CTX.quadraticCurveTo(bx + 58, by - 10, bx + 50, by);
+            CTX.moveTo(bx + 58, by - 5);
+            CTX.lineTo(bx + 62, by - 18);
+            CTX.lineTo(bx + 54, by - 5);
             CTX.closePath();
             CTX.fill();
             
+            // Glowing demonic eyes - larger and more menacing
+            CTX.shadowColor = '#ff0000';
+            CTX.shadowBlur = 20;
             CTX.fillStyle = '#ff0000';
-            CTX.fillRect(bx + 30, by + 8, 8, 10);
-            CTX.fillRect(bx + 42, by + 8, 8, 10);
+            CTX.fillRect(bx + 36, by + 10, 10, 14);
+            CTX.fillRect(bx + 54, by + 10, 10, 14);
             
+            // Eye highlights
             CTX.fillStyle = '#ff6666';
-            CTX.fillRect(bx + 32, by + 10, 4, 6);
-            CTX.fillRect(bx + 44, by + 10, 4, 6);
+            CTX.fillRect(bx + 38, by + 12, 6, 9);
+            CTX.fillRect(bx + 56, by + 12, 6, 9);
             
-            const gradient = CTX.createRadialGradient(bx + boss.width/2, by + 50, 10, bx + boss.width/2, by + 50, 60);
-            gradient.addColorStop(0, 'rgba(255, 0, 0, 0.3)');
+            CTX.shadowBlur = 0;
+            
+            // Demonic aura - more intense
+            const gradient = CTX.createRadialGradient(bx + boss.width/2, by + 60, 15, bx + boss.width/2, by + 60, 80);
+            gradient.addColorStop(0, 'rgba(255, 0, 0, 0.4)');
             gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
             CTX.fillStyle = gradient;
-            CTX.fillRect(bx - 60, by, boss.width + 120, boss.height);
+            CTX.fillRect(bx - 80, by - 20, boss.width + 160, boss.height + 40);
             
+            // Fangs - larger and more menacing
             CTX.fillStyle = '#fff';
-            CTX.fillRect(bx + 32, by + 18, 3, 6);
-            CTX.fillRect(bx + 45, by + 18, 3, 6);
+            CTX.fillRect(bx + 38, by + 22, 4, 8);
+            CTX.fillRect(bx + 58, by + 22, 4, 8);
             
-            const barWidth = 150;
-            const barHeight = 10;
+            // Boss health bar at top - larger and more prominent
+            const barWidth = 180;
+            const barHeight = 12;
             const barX = CANVAS.width / 2 - barWidth / 2;
-            const barY = 30;
+            const barY = 25;
             
             CTX.fillStyle = '#2a0000';
             CTX.fillRect(barX, barY, barWidth, barHeight);
@@ -1035,13 +1358,16 @@
             CTX.fillRect(barX, barY, barWidth * healthPercent, barHeight);
             
             CTX.strokeStyle = '#ff0000';
-            CTX.lineWidth = 2;
+            CTX.lineWidth = 3;
             CTX.strokeRect(barX, barY, barWidth, barHeight);
             
             CTX.fillStyle = '#fff';
-            CTX.font = '10px "Press Start 2P"';
+            CTX.font = '12px "Press Start 2P"';
             CTX.textAlign = 'center';
-            CTX.fillText('DEMON BOSS', CANVAS.width / 2, barY - 5);
+            CTX.shadowColor = '#8b0000';
+            CTX.shadowBlur = 10;
+            CTX.fillText('☠ DEMON BOSS ☠', CANVAS.width / 2, barY - 8);
+            CTX.shadowBlur = 0;
         }
 
         function drawWeapon(weapon) {
@@ -1210,13 +1536,157 @@
             } else {
                 CTX.fillStyle = '#0f0510';
                 CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
-                CTX.fillStyle = '#2a1a2a';
-                for (let y = 0; y < CANVAS.height; y += 16) {
-                    for (let x = 0; x < CANVAS.width; x += 32) {
-                        const offsetX = (y / 16) % 2 === 0 ? 0 : 16;
-                        CTX.fillRect(x + offsetX, y, 30, 14);
+                
+                for (let y = 0; y < CANVAS.height; y += 18) {
+                    for (let x = 0; x < CANVAS.width; x += 40) {
+                        const offsetX = (y / 18) % 2 === 0 ? 0 : 20;
+                        CTX.fillStyle = '#2a1a2a';
+                        CTX.fillRect(x + offsetX, y, 38, 16);
+                        CTX.fillStyle = '#1a0a1a';
+                        CTX.fillRect(x + offsetX, y + 16, 38, 2);
+                        CTX.fillRect(x + offsetX + 38, y, 2, 18);
                     }
                 }
+                
+                CTX.fillStyle = '#1a0a1a';
+                for (let i = 0; i < 80; i++) {
+                    const tx = (i * 53) % CANVAS.width;
+                    const ty = (i * 67) % CANVAS.height;
+                    CTX.fillRect(tx, ty, 2, 2);
+                }
+                
+                CTX.fillStyle = '#251525';
+                CTX.fillRect(0, GROUND, CANVAS.width, CANVAS.height - GROUND);
+                CTX.strokeStyle = '#1a0a1a';
+                CTX.lineWidth = 3;
+                for (let x = 0; x < CANVAS.width; x += 50) {
+                    for (let y = GROUND; y < CANVAS.height; y += 30) {
+                        CTX.strokeRect(x, y, 50, 30);
+                    }
+                }
+                
+                const archPositions = [
+                    {x: 150, y: GROUND - 200},
+                    {x: 400, y: GROUND - 220},
+                    {x: 650, y: GROUND - 190}
+                ];
+                
+                archPositions.forEach(arch => {
+                    CTX.fillStyle = '#1a0a1a';
+                    CTX.fillRect(arch.x, arch.y, 15, 200);
+                    CTX.fillStyle = '#2a1a2a';
+                    CTX.fillRect(arch.x + 2, arch.y, 11, 200);
+                    
+                    CTX.fillStyle = '#1a0a1a';
+                    CTX.fillRect(arch.x + 85, arch.y, 15, 200);
+                    CTX.fillStyle = '#2a1a2a';
+                    CTX.fillRect(arch.x + 87, arch.y, 11, 200);
+                    
+                    CTX.fillStyle = '#0a0510';
+                    CTX.beginPath();
+                    CTX.moveTo(arch.x + 15, arch.y + 50);
+                    CTX.quadraticCurveTo(arch.x + 25, arch.y, arch.x + 50, arch.y - 10);
+                    CTX.quadraticCurveTo(arch.x + 75, arch.y, arch.x + 85, arch.y + 50);
+                    CTX.lineTo(arch.x + 85, arch.y + 150);
+                    CTX.lineTo(arch.x + 15, arch.y + 150);
+                    CTX.closePath();
+                    CTX.fill();
+                    
+                    CTX.strokeStyle = '#3a2a3a';
+                    CTX.lineWidth = 2;
+                    CTX.stroke();
+                });
+                
+                torchFlicker.forEach(torch => {
+                    torch.flicker += torch.speed;
+                    const flicker = Math.sin(torch.flicker) * 3 + Math.cos(torch.flicker * 1.3) * 2;
+                    
+                    CTX.fillStyle = '#3a2a1a';
+                    CTX.fillRect(torch.x - 8, torch.y + 20, 16, 6);
+                    CTX.fillRect(torch.x - 3, torch.y + 26, 6, 20);
+                    
+                    CTX.fillStyle = '#4a4a4a';
+                    CTX.fillRect(torch.x - 10, torch.y + 15, 20, 8);
+                    CTX.fillStyle = '#2a2a2a';
+                    CTX.fillRect(torch.x - 8, torch.y + 17, 2, 4);
+                    CTX.fillRect(torch.x + 6, torch.y + 17, 2, 4);
+                    
+                    CTX.fillStyle = '#5a3a1a';
+                    CTX.fillRect(torch.x - 4, torch.y, 8, 25);
+                    CTX.fillStyle = '#4a2a0a';
+                    CTX.fillRect(torch.x - 3, torch.y + 2, 6, 2);
+                    CTX.fillRect(torch.x - 3, torch.y + 8, 6, 2);
+                    CTX.fillRect(torch.x - 3, torch.y + 14, 6, 2);
+                    
+                    const glowGradient = CTX.createRadialGradient(torch.x, torch.y - 5, 5, torch.x, torch.y - 5, 40 + flicker * 2);
+                    glowGradient.addColorStop(0, 'rgba(255, 150, 50, 0.4)');
+                    glowGradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.15)');
+                    glowGradient.addColorStop(1, 'rgba(255, 80, 0, 0)');
+                    CTX.fillStyle = glowGradient;
+                    CTX.fillRect(torch.x - 50, torch.y - 60, 100, 100);
+                    
+                    CTX.fillStyle = '#ff6600';
+                    CTX.beginPath();
+                    CTX.moveTo(torch.x, torch.y - 15 + flicker);
+                    CTX.quadraticCurveTo(torch.x - 8, torch.y - 5, torch.x - 6, torch.y + 2);
+                    CTX.lineTo(torch.x + 6, torch.y + 2);
+                    CTX.quadraticCurveTo(torch.x + 8, torch.y - 5, torch.x, torch.y - 15 + flicker);
+                    CTX.closePath();
+                    CTX.fill();
+                    
+                    CTX.fillStyle = '#ffaa33';
+                    CTX.beginPath();
+                    CTX.moveTo(torch.x, torch.y - 12 + flicker * 0.8);
+                    CTX.quadraticCurveTo(torch.x - 5, torch.y - 3, torch.x - 4, torch.y + 2);
+                    CTX.lineTo(torch.x + 4, torch.y + 2);
+                    CTX.quadraticCurveTo(torch.x + 5, torch.y - 3, torch.x, torch.y - 12 + flicker * 0.8);
+                    CTX.closePath();
+                    CTX.fill();
+                    
+                    CTX.fillStyle = '#ffffaa';
+                    CTX.beginPath();
+                    CTX.moveTo(torch.x, torch.y - 8 + flicker * 0.5);
+                    CTX.quadraticCurveTo(torch.x - 3, torch.y - 2, torch.x - 2, torch.y + 2);
+                    CTX.lineTo(torch.x + 2, torch.y + 2);
+                    CTX.quadraticCurveTo(torch.x + 3, torch.y - 2, torch.x, torch.y - 8 + flicker * 0.5);
+                    CTX.closePath();
+                    CTX.fill();
+                    
+                    CTX.fillStyle = `rgba(50, 50, 60, ${0.15 + Math.abs(Math.sin(torch.flicker)) * 0.1})`;
+                    for (let s = 0; s < 3; s++) {
+                        const smokeY = torch.y - 20 - s * 15 + Math.sin(torch.flicker + s) * 3;
+                        const smokeX = torch.x + Math.cos(torch.flicker * 0.7 + s) * 5;
+                        CTX.beginPath();
+                        CTX.arc(smokeX, smokeY, 4 + s * 2, 0, Math.PI * 2);
+                        CTX.fill();
+                    }
+                });
+                
+                for (let i = 0; i < 5; i++) {
+                    const chainX = 100 + i * 150;
+                    CTX.strokeStyle = '#3a3a3a';
+                    CTX.lineWidth = 2;
+                    for (let j = 0; j < 8; j++) {
+                        const cy = 10 + j * 12 + Math.sin(Date.now() * 0.001 + i) * 2;
+                        CTX.beginPath();
+                        CTX.arc(chainX, cy, 3, 0, Math.PI * 2);
+                        CTX.stroke();
+                    }
+                }
+                
+                const skullPositions = [{x: 50, y: GROUND - 100}, {x: 250, y: GROUND - 80}, {x: 550, y: GROUND - 90}, {x: 720, y: GROUND - 110}];
+                skullPositions.forEach(skull => {
+                    CTX.fillStyle = '#8a8a7a';
+                    CTX.beginPath();
+                    CTX.ellipse(skull.x, skull.y, 12, 14, 0, 0, Math.PI * 2);
+                    CTX.fill();
+                    
+                    CTX.fillStyle = '#1a1a1a';
+                    CTX.fillRect(skull.x - 4, skull.y - 3, 3, 5);
+                    CTX.fillRect(skull.x + 1, skull.y - 3, 3, 5);
+                    
+                    CTX.fillRect(skull.x - 2, skull.y + 4, 4, 3);
+                });
             }
         }
 
@@ -1350,10 +1820,16 @@
 
         function updateOrcs() {
             orcSpawnTimer++;
+            ghoulSpawnTimer++;
             
             if (orcSpawnTimer > ORC_SPAWN_RATE && !game.bossSpawned) {
                 spawnOrc();
                 orcSpawnTimer = 0;
+            }
+            
+            if (ghoulSpawnTimer > ORC_SPAWN_RATE * 3 && !game.bossSpawned && game.level >= 2) {
+                spawnGhoul();
+                ghoulSpawnTimer = 0;
             }
             
             for (let i = orcs.length - 1; i >= 0; i--) {
@@ -1398,6 +1874,55 @@
                 }
                 if (orc.x < -50) {
                     orcs.splice(i, 1);
+                }
+            }
+            
+            for (let i = ghouls.length - 1; i >= 0; i--) {
+                const ghoul = ghouls[i];
+                ghoul.x -= ghoul.speed;
+                
+                if (checkCollision(player, {x: ghoul.x, y: ghoul.y, width: ghoul.width, height: ghoul.height})) {
+                    game.health -= 0.4;
+                    if (game.health <= 0) {
+                        game.running = false;
+                        game.health = 0;
+                        stopMusic();
+                    }
+                }
+                
+                if (player.attacking && checkCollision(getAttackBox(), {x: ghoul.x, y: ghoul.y, width: ghoul.width, height: ghoul.height})) {
+                    ghoul.health--;
+                    createPoofEffect(ghoul.x + ghoul.width / 2, ghoul.y + ghoul.height / 2);
+                    
+                    if (ghoul.health <= 0) {
+                        game.score++;
+                        spawnWeapon(ghoul.x + ghoul.width / 2, ghoul.y);
+                        createPoofEffect(ghoul.x + ghoul.width / 2, ghoul.y + ghoul.height / 2);
+                        createPoofEffect(ghoul.x + ghoul.width / 2 + 10, ghoul.y + ghoul.height / 2 - 10);
+                        createPoofEffect(ghoul.x + ghoul.width / 2 - 10, ghoul.y + ghoul.height / 2 + 10);
+                        ghouls.splice(i, 1);
+                        
+                        if (game.score >= game.orcsPerLevel * game.level) {
+                            if (game.level < game.maxLevel) {
+                                game.level++;
+                                if (game.level === 2 && !player.battleAxeUnlocked) {
+                                    player.battleAxeUnlocked = true;
+                                    player.weapon = 'battleaxe';
+                                    updateWeaponUI();
+                                    alert('LEVEL 2!\nBATTLE AXE UNLOCKED!\nPRESS Q TO SWITCH WEAPONS');
+                                } else {
+                                    alert('LEVEL ' + game.level + '!');
+                                }
+                            } else if (!game.bossSpawned) {
+                                alert('FINAL BOSS INCOMING!\nTHE DEMON AWAKENS!');
+                                spawnBoss();
+                            }
+                        }
+                    }
+                }
+                
+                if (ghoul.x < -50) {
+                    ghouls.splice(i, 1);
                 }
             }
             
@@ -1470,6 +1995,15 @@
             }
         }
 
+        function updatePoofParticles() {
+            for (let i = poofParticles.length - 1; i >= 0; i--) {
+                poofParticles[i].update();
+                if (poofParticles[i].isDead()) {
+                    poofParticles.splice(i, 1);
+                }
+            }
+        }
+
         function updateBloodRain() {
             if (bloodRainTimer > 0) {
                 bloodRainTimer--;
@@ -1491,6 +2025,7 @@
             updateOrcs();
             updateWeapons();
             updateBloodParticles();
+            updatePoofParticles();
             updateBloodRain();
             updateUI();
         }
@@ -1508,8 +2043,10 @@
             }
             
             bloodParticles.forEach(particle => particle.draw());
+            poofParticles.forEach(particle => particle.draw());
             weapons.forEach(drawWeapon);
             orcs.forEach(drawOrc);
+            ghouls.forEach(drawGhoul);
             drawDemonBoss();
             drawPlayer();
             drawScreens();
