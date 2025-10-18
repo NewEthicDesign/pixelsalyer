@@ -119,6 +119,7 @@
             gap: 20px;
             justify-content: space-between;
             align-items: flex-end;
+            z-index: 1000;
         }
 
         .control-group {
@@ -284,53 +285,29 @@
         let musicInterval = null;
         let bassInterval = null;
         let currentBassNote = 0;
-        let padOscillator = null;
-        let padGain = null;
         let pauseMusicInterval = null;
-        let arpeggioInterval = null;
-        let currentArpNote = 0;
+        let droneOscillator = null;
+        let droneGain = null;
 
         const melody = [
-            {freq: 329.63, duration: 200}, {freq: 329.63, duration: 200}, {freq: 392.00, duration: 200},
-            {freq: 493.88, duration: 300}, {freq: 440.00, duration: 300}, {freq: 392.00, duration: 400},
-            {freq: 329.63, duration: 200}, {freq: 329.63, duration: 200}, {freq: 392.00, duration: 200},
-            {freq: 523.25, duration: 300}, {freq: 493.88, duration: 500},
-            {freq: 587.33, duration: 200}, {freq: 523.25, duration: 200}, {freq: 493.88, duration: 200},
-            {freq: 440.00, duration: 300}, {freq: 493.88, duration: 300}, {freq: 392.00, duration: 400},
-            {freq: 440.00, duration: 200}, {freq: 493.88, duration: 200}, {freq: 523.25, duration: 200},
-            {freq: 587.33, duration: 400}, {freq: 523.25, duration: 200}, {freq: 493.88, duration: 200},
-            {freq: 440.00, duration: 400}, {freq: 392.00, duration: 400},
-            {freq: 329.63, duration: 200}, {freq: 392.00, duration: 200}, {freq: 329.63, duration: 200},
-            {freq: 293.66, duration: 600}, {freq: 329.63, duration: 600}
+            {freq: 220.00, duration: 400}, {freq: 220.00, duration: 400}, {freq: 233.08, duration: 400},
+            {freq: 246.94, duration: 600}, {freq: 220.00, duration: 600}, {freq: 196.00, duration: 800},
+            {freq: 220.00, duration: 400}, {freq: 220.00, duration: 400}, {freq: 246.94, duration: 400},
+            {freq: 261.63, duration: 600}, {freq: 246.94, duration: 1200},
+            {freq: 220.00, duration: 400}, {freq: 196.00, duration: 400}, {freq: 174.61, duration: 400},
+            {freq: 196.00, duration: 600}, {freq: 220.00, duration: 600}, {freq: 196.00, duration: 800}
         ];
 
         const bassLine = [
-            {freq: 164.81, duration: 400}, {freq: 164.81, duration: 400},
-            {freq: 196.00, duration: 400}, {freq: 196.00, duration: 400},
-            {freq: 220.00, duration: 400}, {freq: 220.00, duration: 400},
-            {freq: 196.00, duration: 400}, {freq: 196.00, duration: 400},
-            {freq: 164.81, duration: 400}, {freq: 164.81, duration: 400},
-            {freq: 146.83, duration: 400}, {freq: 146.83, duration: 400},
-            {freq: 164.81, duration: 800}
-        ];
-
-        const arpeggio = [
-            {freq: 329.63, duration: 100}, {freq: 392.00, duration: 100}, {freq: 493.88, duration: 100},
-            {freq: 392.00, duration: 100}, {freq: 329.63, duration: 100}, {freq: 392.00, duration: 100},
-            {freq: 493.88, duration: 100}, {freq: 392.00, duration: 100},
-            {freq: 392.00, duration: 100}, {freq: 493.88, duration: 100}, {freq: 587.33, duration: 100},
-            {freq: 493.88, duration: 100}, {freq: 392.00, duration: 100}, {freq: 493.88, duration: 100},
-            {freq: 587.33, duration: 100}, {freq: 493.88, duration: 100},
-            {freq: 440.00, duration: 100}, {freq: 523.25, duration: 100}, {freq: 659.25, duration: 100},
-            {freq: 523.25, duration: 100}, {freq: 440.00, duration: 100}, {freq: 523.25, duration: 100},
-            {freq: 659.25, duration: 100}, {freq: 523.25, duration: 100}
+            {freq: 110.00, duration: 800}, {freq: 110.00, duration: 800},
+            {freq: 98.00, duration: 800}, {freq: 98.00, duration: 800},
+            {freq: 110.00, duration: 800}, {freq: 110.00, duration: 800},
+            {freq: 87.31, duration: 1600}
         ];
 
         const pauseMelody = [
-            {freq: 523.25, duration: 600}, {freq: 587.33, duration: 600}, {freq: 659.25, duration: 600},
-            {freq: 587.33, duration: 600}, {freq: 523.25, duration: 800}, {freq: 392.00, duration: 600},
-            {freq: 440.00, duration: 600}, {freq: 493.88, duration: 800}, {freq: 523.25, duration: 600},
-            {freq: 493.88, duration: 600}, {freq: 440.00, duration: 600}, {freq: 392.00, duration: 1200}
+            {freq: 261.63, duration: 800}, {freq: 293.66, duration: 800}, {freq: 329.63, duration: 800},
+            {freq: 293.66, duration: 800}, {freq: 261.63, duration: 1200}
         ];
 
         const game = {
@@ -350,6 +327,7 @@
 
         const bloodRainParticles = [];
         let bloodRainTimer = 0;
+        let capeFrame = 0;
 
         const player = {
             x: 100, y: 300, width: 30, height: 40, speed: PLAYER_SPEED,
@@ -457,28 +435,28 @@
             oscillator.stop(audioContext.currentTime + duration / 1000);
         }
 
-        function startPad() {
-            padOscillator = audioContext.createOscillator();
-            padGain = audioContext.createGain();
+        function startDrone() {
+            droneOscillator = audioContext.createOscillator();
+            droneGain = audioContext.createGain();
             
-            padOscillator.connect(padGain);
-            padGain.connect(audioContext.destination);
+            droneOscillator.connect(droneGain);
+            droneGain.connect(audioContext.destination);
             
-            padOscillator.type = 'sawtooth';
-            padOscillator.frequency.value = 164.81;
+            droneOscillator.type = 'sawtooth';
+            droneOscillator.frequency.value = 55;
             
-            padGain.gain.setValueAtTime(0, audioContext.currentTime);
-            padGain.gain.linearRampToValueAtTime(0.04, audioContext.currentTime + 2);
+            droneGain.gain.setValueAtTime(0, audioContext.currentTime);
+            droneGain.gain.linearRampToValueAtTime(0.06, audioContext.currentTime + 3);
             
-            padOscillator.start(audioContext.currentTime);
+            droneOscillator.start(audioContext.currentTime);
         }
 
-        function stopPad() {
-            if (padOscillator && padGain) {
-                padGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
-                padOscillator.stop(audioContext.currentTime + 0.5);
-                padOscillator = null;
-                padGain = null;
+        function stopDrone() {
+            if (droneOscillator && droneGain) {
+                droneGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1);
+                droneOscillator.stop(audioContext.currentTime + 1);
+                droneOscillator = null;
+                droneGain = null;
             }
         }
 
@@ -487,13 +465,12 @@
             musicPlaying = true;
             currentNote = 0;
             currentBassNote = 0;
-            currentArpNote = 0;
-            startPad();
+            startDrone();
             
             function playNextNote() {
                 if (!musicPlaying) return;
                 const note = melody[currentNote];
-                playNote(note.freq, note.duration, 0.10, 'square');
+                playNote(note.freq, note.duration, 0.08, 'square');
                 currentNote = (currentNote + 1) % melody.length;
                 musicInterval = setTimeout(playNextNote, note.duration);
             }
@@ -501,30 +478,20 @@
             function playNextBass() {
                 if (!musicPlaying) return;
                 const note = bassLine[currentBassNote];
-                playNote(note.freq, note.duration, 0.12, 'triangle');
+                playNote(note.freq, note.duration, 0.15, 'sawtooth');
                 currentBassNote = (currentBassNote + 1) % bassLine.length;
                 bassInterval = setTimeout(playNextBass, note.duration);
             }
             
-            function playNextArp() {
-                if (!musicPlaying) return;
-                const note = arpeggio[currentArpNote];
-                playNote(note.freq, note.duration, 0.05, 'square');
-                currentArpNote = (currentArpNote + 1) % arpeggio.length;
-                arpeggioInterval = setTimeout(playNextArp, note.duration);
-            }
-            
             playNextNote();
             playNextBass();
-            playNextArp();
         }
 
         function stopMusic() {
             musicPlaying = false;
             if (musicInterval) { clearTimeout(musicInterval); musicInterval = null; }
             if (bassInterval) { clearTimeout(bassInterval); bassInterval = null; }
-            if (arpeggioInterval) { clearTimeout(arpeggioInterval); arpeggioInterval = null; }
-            stopPad();
+            stopDrone();
         }
 
         function playPauseMusic() {
@@ -759,43 +726,122 @@
 
         function drawPlayer() {
             const p = player;
+            capeFrame += 0.12;
+            
+            // FLOWING CAPE
+            const capeWave = Math.sin(capeFrame) * 3;
+            const capeWave2 = Math.sin(capeFrame + 0.5) * 4;
+            CTX.fillStyle = '#8b0000';
+            CTX.beginPath();
+            CTX.moveTo(p.x + 8, p.y + 2);
+            CTX.quadraticCurveTo(p.x - 12 + capeWave, p.y + 15, p.x - 8 + capeWave2, p.y + 32);
+            CTX.lineTo(p.x - 4 + capeWave, p.y + 38);
+            CTX.lineTo(p.x + 2, p.y + 35);
+            CTX.lineTo(p.x + 8, p.y + 28);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.fillStyle = '#a00000';
+            CTX.beginPath();
+            CTX.moveTo(p.x + 8, p.y + 3);
+            CTX.quadraticCurveTo(p.x - 8 + capeWave, p.y + 12, p.x - 6 + capeWave2, p.y + 25);
+            CTX.lineTo(p.x + 0, p.y + 28);
+            CTX.lineTo(p.x + 6, p.y + 20);
+            CTX.closePath();
+            CTX.fill();
+            
+            // LEGS
             CTX.fillStyle = '#8b7355';
-            CTX.fillRect(p.x + 6, p.y + 28, 8, 14);
-            CTX.fillRect(p.x + 16, p.y + 28, 8, 14);
+            CTX.fillRect(p.x + 6, p.y + 30, 8, 12);
+            CTX.fillRect(p.x + 16, p.y + 30, 8, 12);
+            
+            CTX.fillStyle = '#5a5a5a';
+            CTX.fillRect(p.x + 5, p.y + 32, 9, 4);
+            CTX.fillRect(p.x + 16, p.y + 32, 9, 4);
+            
+            // TORSO
             CTX.fillStyle = '#4a4a4a';
             CTX.fillRect(p.x + 2, p.y + 2, 26, 28);
+            
             CTX.fillStyle = '#6a6a6a';
-            CTX.fillRect(p.x + 3, p.y + 3, 24, 4);
-            CTX.fillRect(p.x + 4, p.y + 10, 22, 3);
-            CTX.fillRect(p.x + 5, p.y + 16, 20, 2);
-            CTX.fillStyle = '#5a3a1a';
-            CTX.fillRect(p.x + 2, p.y + 22, 26, 4);
-            CTX.fillStyle = '#8a7a5a';
-            CTX.fillRect(p.x + 12, p.y + 22, 6, 4);
-            CTX.fillStyle = '#5a5a5a';
-            CTX.fillRect(p.x - 2, p.y + 1, 10, 10);
-            CTX.fillRect(p.x + 22, p.y + 1, 10, 10);
+            CTX.fillRect(p.x + 3, p.y + 3, 24, 5);
+            CTX.fillRect(p.x + 4, p.y + 10, 22, 4);
+            CTX.fillRect(p.x + 5, p.y + 16, 20, 3);
+            
             CTX.fillStyle = '#3a3a3a';
-            CTX.fillRect(p.x, p.y - 2, 3, 4);
-            CTX.fillRect(p.x + 27, p.y - 2, 3, 4);
+            for (let r = 0; r < 5; r++) {
+                CTX.fillRect(p.x + 5 + r * 5, p.y + 5, 2, 2);
+                CTX.fillRect(p.x + 6 + r * 4, p.y + 12, 2, 2);
+            }
+            
+            CTX.fillStyle = '#5a3a1a';
+            CTX.fillRect(p.x + 2, p.y + 22, 26, 5);
+            CTX.fillStyle = '#8a7a5a';
+            CTX.fillRect(p.x + 12, p.y + 22, 6, 5);
+            
+            CTX.fillStyle = '#d4af37';
+            CTX.fillRect(p.x + 13, p.y + 23, 4, 3);
+            
+            // SHOULDERS
+            CTX.fillStyle = '#5a5a5a';
+            CTX.fillRect(p.x - 2, p.y + 1, 10, 12);
+            CTX.fillRect(p.x + 22, p.y + 1, 10, 12);
+            
+            CTX.fillStyle = '#3a3a3a';
+            CTX.fillRect(p.x + 0, p.y - 2, 3, 5);
+            CTX.fillRect(p.x + 27, p.y - 2, 3, 5);
+            
             CTX.fillStyle = '#7a7a7a';
-            CTX.fillRect(p.x - 1, p.y + 2, 8, 2);
-            CTX.fillRect(p.x + 23, p.y + 2, 8, 2);
+            CTX.fillRect(p.x - 1, p.y + 2, 8, 3);
+            CTX.fillRect(p.x + 23, p.y + 2, 8, 3);
+            
+            // GAUNTLETS
+            CTX.fillStyle = '#4a4a4a';
+            CTX.fillRect(p.x - 3, p.y + 12, 6, 10);
+            CTX.fillRect(p.x + 27, p.y + 12, 6, 10);
+            
+            CTX.fillStyle = '#6a6a6a';
+            CTX.fillRect(p.x - 2, p.y + 13, 4, 2);
+            CTX.fillRect(p.x + 28, p.y + 13, 4, 2);
+            
+            // NECK
             CTX.fillStyle = '#ffaa88';
             CTX.fillRect(p.x + 8, p.y - 10, 14, 12);
-            CTX.fillStyle = '#3a3a3a';
-            CTX.fillRect(p.x + 5, p.y - 16, 20, 10);
-            CTX.fillStyle = '#000';
-            CTX.fillRect(p.x + 8, p.y - 12, 14, 4);
-            CTX.fillStyle = '#5a5a5a';
-            CTX.fillRect(p.x + 6, p.y - 15, 4, 2);
+            
+            // HELMET
+            CTX.fillStyle = '#2a2a2a';
+            CTX.fillRect(p.x + 5, p.y - 16, 20, 11);
+            
             CTX.fillStyle = '#8b0000';
             CTX.fillRect(p.x + 12, p.y - 20, 6, 5);
             CTX.fillRect(p.x + 13, p.y - 23, 4, 4);
-            CTX.fillStyle = '#8a7a5a';
-            CTX.fillRect(p.x + 4, p.y - 14, 3, 3);
-            CTX.fillRect(p.x + 23, p.y - 14, 3, 3);
+            
+            CTX.fillStyle = '#000';
+            CTX.fillRect(p.x + 8, p.y - 12, 14, 5);
+            
+            // GLOWING EYES
+            CTX.shadowColor = '#ff0000';
+            CTX.shadowBlur = 8;
+            CTX.fillStyle = '#ff0000';
+            CTX.fillRect(p.x + 10, p.y - 11, 3, 3);
+            CTX.fillRect(p.x + 17, p.y - 11, 3, 3);
+            CTX.shadowBlur = 0;
+            
+            CTX.fillStyle = '#5a5a5a';
+            CTX.fillRect(p.x + 6, p.y - 15, 4, 3);
+            CTX.fillRect(p.x + 20, p.y - 15, 4, 3);
+            
+            CTX.fillStyle = '#1a1a1a';
+            CTX.fillRect(p.x + 7, p.y - 8, 2, 2);
+            CTX.fillRect(p.x + 10, p.y - 8, 2, 2);
+            CTX.fillRect(p.x + 18, p.y - 8, 2, 2);
+            CTX.fillRect(p.x + 21, p.y - 8, 2, 2);
+            
+            CTX.fillStyle = '#3a3a3a';
+            CTX.fillRect(p.x + 8, p.y - 6, 6, 3);
+            CTX.fillRect(p.x + 16, p.y - 6, 6, 3);
 
+            // Health bar
             const barWidth = 40;
             const barHeight = 6;
             const barX = p.x + (p.width / 2) - (barWidth / 2);
@@ -927,12 +973,10 @@
             const legWidth = orc.width * 0.22;
             const legHeight = orc.height * 0.4;
             
-            // Left leg
             CTX.beginPath();
             CTX.ellipse(orc.x + orc.width * 0.28, orc.y + orc.height - legHeight/2 + legOffset, legWidth/2, legHeight/2, 0, 0, Math.PI * 2);
             CTX.fill();
             
-            // Right leg
             CTX.beginPath();
             CTX.ellipse(orc.x + orc.width * 0.62, orc.y + orc.height - legHeight/2 - legOffset, legWidth/2, legHeight/2, 0, 0, Math.PI * 2);
             CTX.fill();
@@ -960,12 +1004,10 @@
             
             // Arms - rounded
             CTX.fillStyle = color.body;
-            // Left arm
             CTX.beginPath();
             CTX.ellipse(orc.x + orc.width * 0.15, orc.y + orc.height * 0.35, orc.width * 0.12, orc.height * 0.25, -0.3, 0, Math.PI * 2);
             CTX.fill();
             
-            // Right arm
             CTX.beginPath();
             CTX.ellipse(orc.x + orc.width * 0.85, orc.y + orc.height * 0.35, orc.width * 0.12, orc.height * 0.25, 0.3, 0, Math.PI * 2);
             CTX.fill();
@@ -987,7 +1029,6 @@
             
             // Pointed ears
             CTX.fillStyle = color.head;
-            // Left ear
             CTX.beginPath();
             CTX.moveTo(orc.x + orc.width * 0.2, orc.y + orc.height * 0.08);
             CTX.lineTo(orc.x + orc.width * 0.05, orc.y + orc.height * 0.02);
@@ -995,7 +1036,6 @@
             CTX.closePath();
             CTX.fill();
             
-            // Right ear
             CTX.beginPath();
             CTX.moveTo(orc.x + orc.width * 0.8, orc.y + orc.height * 0.08);
             CTX.lineTo(orc.x + orc.width * 0.95, orc.y + orc.height * 0.02);
@@ -1007,7 +1047,6 @@
             CTX.fillStyle = '#2a2a2a';
             const hornHeight = orc.height * 0.4;
             
-            // Left horn - curved
             CTX.beginPath();
             CTX.moveTo(orc.x + orc.width * 0.3, orc.y - headHeight * 0.3);
             CTX.quadraticCurveTo(orc.x + orc.width * 0.15, orc.y - headHeight * 0.8, orc.x + orc.width * 0.1, orc.y - hornHeight);
@@ -1016,7 +1055,6 @@
             CTX.closePath();
             CTX.fill();
             
-            // Right horn - curved
             CTX.beginPath();
             CTX.moveTo(orc.x + orc.width * 0.7, orc.y - headHeight * 0.3);
             CTX.quadraticCurveTo(orc.x + orc.width * 0.85, orc.y - headHeight * 0.8, orc.x + orc.width * 0.9, orc.y - hornHeight);
@@ -1036,7 +1074,6 @@
             CTX.fillStyle = '#ff0000';
             const eyeSize = orc.width * 0.13;
             
-            // Eyes - slightly oval and menacing
             CTX.beginPath();
             CTX.ellipse(orc.x + orc.width * 0.35, orc.y + orc.height * 0.08, eyeSize * 0.45, eyeSize * 0.55, 0, 0, Math.PI * 2);
             CTX.fill();
@@ -1069,7 +1106,6 @@
             const tuskWidth = orc.width * 0.07;
             const tuskHeight = headHeight * 0.35;
             
-            // Left tusk
             CTX.beginPath();
             CTX.moveTo(orc.x + orc.width * 0.35, orc.y + orc.height * 0.18);
             CTX.lineTo(orc.x + orc.width * 0.32, orc.y + orc.height * 0.18 + tuskHeight);
@@ -1077,7 +1113,6 @@
             CTX.closePath();
             CTX.fill();
             
-            // Right tusk
             CTX.beginPath();
             CTX.moveTo(orc.x + orc.width * 0.65, orc.y + orc.height * 0.18);
             CTX.lineTo(orc.x + orc.width * 0.68, orc.y + orc.height * 0.18 + tuskHeight);
@@ -1273,11 +1308,11 @@
             CTX.fillStyle = '#8a1a1a';
             CTX.fillRect(bx + 28, by - 8, 44, 38);
             
-            // MASSIVE DEMON HORNS - Much bigger and more imposing
+            // MASSIVE DEMON HORNS
             CTX.fillStyle = '#1a1a1a';
-            const hornSize = 45; // Increased from previous smaller size
+            const hornSize = 45;
             
-            // Left horn - massive curved horn
+            // Left horn
             CTX.beginPath();
             CTX.moveTo(bx + 32, by + 2);
             CTX.quadraticCurveTo(bx + 10, by - 25, bx - 5, by - 45);
@@ -1286,7 +1321,7 @@
             CTX.closePath();
             CTX.fill();
             
-            // Right horn - massive curved horn
+            // Right horn
             CTX.beginPath();
             CTX.moveTo(bx + 68, by + 2);
             CTX.quadraticCurveTo(bx + 90, by - 25, bx + 105, by - 45);
@@ -1295,7 +1330,7 @@
             CTX.closePath();
             CTX.fill();
             
-            // Horn ridges and details - make them look more demonic
+            // Horn ridges
             CTX.fillStyle = '#2a2a2a';
             for (let r = 0; r < 4; r++) {
                 CTX.fillRect(bx + 8 - r * 3, by - 10 - r * 8, 4, 3);
@@ -1318,7 +1353,7 @@
             CTX.closePath();
             CTX.fill();
             
-            // Glowing demonic eyes - larger and more menacing
+            // Glowing demonic eyes
             CTX.shadowColor = '#ff0000';
             CTX.shadowBlur = 20;
             CTX.fillStyle = '#ff0000';
@@ -1332,19 +1367,19 @@
             
             CTX.shadowBlur = 0;
             
-            // Demonic aura - more intense
+            // Demonic aura
             const gradient = CTX.createRadialGradient(bx + boss.width/2, by + 60, 15, bx + boss.width/2, by + 60, 80);
             gradient.addColorStop(0, 'rgba(255, 0, 0, 0.4)');
             gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
             CTX.fillStyle = gradient;
             CTX.fillRect(bx - 80, by - 20, boss.width + 160, boss.height + 40);
             
-            // Fangs - larger and more menacing
+            // Fangs
             CTX.fillStyle = '#fff';
             CTX.fillRect(bx + 38, by + 22, 4, 8);
             CTX.fillRect(bx + 58, by + 22, 4, 8);
             
-            // Boss health bar at top - larger and more prominent
+            // Boss health bar at top
             const barWidth = 180;
             const barHeight = 12;
             const barX = CANVAS.width / 2 - barWidth / 2;
@@ -1490,7 +1525,8 @@
             CTX.fillStyle = '#0a0a1a';
             CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
             
-            if (game.level < 3) {
+            if (game.level === 1) {
+                // Level 1 - City dungeon (original)
                 CTX.fillStyle = '#ffffff';
                 for (let i = 0; i < 50; i++) {
                     const starX = (i * 47 + Date.now() * 0.01) % CANVAS.width;
@@ -1533,7 +1569,209 @@
                     CTX.fillRect(pos.x, pos.y + 33, 50, 4);
                     CTX.fillRect(pos.x + 23, pos.y, 4, 70);
                 });
+            } else if (game.level === 2) {
+                // Level 2 - Detailed Ancient Ruins
+                const skyGradient = CTX.createLinearGradient(0, 0, 0, 200);
+                skyGradient.addColorStop(0, '#0a0515');
+                skyGradient.addColorStop(1, '#15101a');
+                CTX.fillStyle = skyGradient;
+                CTX.fillRect(0, 0, CANVAS.width, 200);
+                
+                CTX.fillStyle = '#ffffff';
+                for (let i = 0; i < 90; i++) {
+                    const starX = (i * 37) % CANVAS.width;
+                    const starY = (i * 53) % (CANVAS.height - 120);
+                    const starSize = Math.random() > 0.85 ? 2 : 1;
+                    const starBrightness = Math.random() > 0.7 ? 0.9 : 0.6;
+                    CTX.globalAlpha = starBrightness;
+                    CTX.fillRect(starX, starY, starSize, starSize);
+                }
+                CTX.globalAlpha = 1;
+                
+                CTX.shadowColor = '#8b0000';
+                CTX.shadowBlur = 45;
+                CTX.fillStyle = '#6a0a0a';
+                CTX.beginPath();
+                CTX.arc(650, 70, 40, 0, Math.PI * 2);
+                CTX.fill();
+                CTX.shadowBlur = 0;
+                
+                CTX.fillStyle = '#5a0505';
+                CTX.beginPath();
+                CTX.arc(660, 65, 8, 0, Math.PI * 2);
+                CTX.fill();
+                CTX.beginPath();
+                CTX.arc(645, 75, 5, 0, Math.PI * 2);
+                CTX.fill();
+                
+                CTX.fillStyle = '#0a0a10';
+                CTX.beginPath();
+                CTX.moveTo(0, 190);
+                CTX.lineTo(100, 150);
+                CTX.lineTo(180, 160);
+                CTX.lineTo(250, 130);
+                CTX.lineTo(320, 145);
+                CTX.lineTo(400, 120);
+                CTX.lineTo(480, 135);
+                CTX.lineTo(560, 115);
+                CTX.lineTo(640, 125);
+                CTX.lineTo(720, 140);
+                CTX.lineTo(CANVAS.width, 130);
+                CTX.lineTo(CANVAS.width, GROUND);
+                CTX.lineTo(0, GROUND);
+                CTX.closePath();
+                CTX.fill();
+                
+                // Ruins
+                CTX.fillStyle = '#15101a';
+                CTX.fillRect(500, 70, 140, 120);
+                CTX.fillRect(550, 25, 35, 45);
+                CTX.beginPath();
+                CTX.moveTo(550, 25);
+                CTX.lineTo(567, 10);
+                CTX.lineTo(585, 25);
+                CTX.fill();
+                
+                CTX.fillStyle = '#0a0515';
+                CTX.fillRect(510, 100, 25, 40);
+                CTX.fillRect(595, 120, 30, 50);
+                
+                for (let i = 0; i < 4; i++) {
+                    CTX.fillStyle = '#200510';
+                    CTX.fillRect(520 + i * 30, 95, 18, 50);
+                    CTX.beginPath();
+                    CTX.moveTo(520 + i * 30, 95);
+                    CTX.lineTo(529 + i * 30, 85);
+                    CTX.lineTo(538 + i * 30, 95);
+                    CTX.fill();
+                }
+                
+                CTX.fillStyle = '#1a1520';
+                CTX.fillRect(70, 110, 60, 130);
+                CTX.fillStyle = '#0a0515';
+                CTX.fillRect(80, 120, 18, 40);
+                CTX.fillRect(105, 145, 18, 55);
+                
+                for (let i = 0; i < 5; i++) {
+                    if (i !== 2) {
+                        CTX.fillStyle = '#1a1520';
+                        CTX.fillRect(75 + i * 12, 105, 10, 12);
+                    }
+                }
+                
+                CTX.fillStyle = '#1a1520';
+                CTX.fillRect(650, 130, 90, 110);
+                CTX.fillStyle = '#0a0515';
+                CTX.fillRect(660, 140, 22, 45);
+                CTX.fillRect(705, 155, 28, 60);
+                
+                // Pillars
+                CTX.fillStyle = '#2a2030';
+                CTX.fillRect(165, GROUND - 150, 40, 150);
+                CTX.fillStyle = '#3a3040';
+                CTX.fillRect(160, GROUND - 155, 50, 12);
+                CTX.fillStyle = '#1a1520';
+                CTX.fillRect(165, GROUND - 160, 18, 10);
+                CTX.fillRect(185, GROUND - 157, 15, 8);
+                CTX.fillRect(175, GROUND - 163, 10, 6);
+                
+                CTX.fillStyle = '#0a0a0a';
+                CTX.fillRect(180, GROUND - 130, 3, 50);
+                CTX.fillRect(190, GROUND - 90, 3, 35);
+                CTX.fillRect(172, GROUND - 70, 2, 45);
+                
+                CTX.fillStyle = '#1a2a1a';
+                for (let v = 0; v < 5; v++) {
+                    CTX.fillRect(168 + v * 7, GROUND - 120 + v * 20, 3, 15);
+                }
+                
+                // Archway
+                CTX.fillStyle = '#2a2030';
+                CTX.fillRect(360, GROUND - 130, 28, 130);
+                CTX.fillRect(460, GROUND - 130, 28, 130);
+                CTX.fillStyle = '#3a3040';
+                CTX.fillRect(362, GROUND - 130, 24, 8);
+                CTX.fillRect(462, GROUND - 130, 24, 8);
+                
+                CTX.fillStyle = '#2a2030';
+                CTX.beginPath();
+                CTX.moveTo(388, GROUND - 130);
+                CTX.quadraticCurveTo(410, GROUND - 155, 438, GROUND - 148);
+                CTX.lineTo(438, GROUND - 135);
+                CTX.quadraticCurveTo(415, GROUND - 142, 388, GROUND - 120);
+                CTX.closePath();
+                CTX.fill();
+                
+                CTX.fillStyle = '#0a0515';
+                CTX.fillRect(438, GROUND - 148, 22, 25);
+                
+                CTX.fillStyle = '#000';
+                CTX.fillRect(372, GROUND - 110, 2, 40);
+                CTX.fillRect(375, GROUND - 70, 2, 30);
+                CTX.fillRect(470, GROUND - 105, 2, 45);
+                
+                CTX.fillStyle = '#2a2030';
+                CTX.fillRect(615, GROUND - 95, 35, 95);
+                CTX.fillStyle = '#3a3040';
+                CTX.fillRect(610, GROUND - 100, 45, 10);
+                
+                // Ground and rubble
+                CTX.fillStyle = '#1a1525';
+                CTX.fillRect(0, GROUND, CANVAS.width, CANVAS.height - GROUND);
+                
+                CTX.strokeStyle = '#0a0a15';
+                CTX.lineWidth = 3;
+                for (let x = 0; x < CANVAS.width; x += 48) {
+                    for (let y = GROUND; y < CANVAS.height; y += 32) {
+                        const missing = Math.random() > 0.75;
+                        if (!missing) {
+                            CTX.strokeRect(x, y, 48, 32);
+                            if (Math.random() > 0.6) {
+                                CTX.fillStyle = '#0a0a0a';
+                                CTX.fillRect(x + 10, y, 2, 32);
+                            }
+                            if (Math.random() > 0.7) {
+                                CTX.fillRect(x, y + 15, 48, 2);
+                            }
+                        } else {
+                            CTX.fillStyle = '#000';
+                            CTX.fillRect(x + 5, y + 5, 38, 22);
+                        }
+                    }
+                }
+                
+                // Skulls
+                for (let i = 0; i < 8; i++) {
+                    const sx = 40 + i * 100;
+                    const sy = GROUND - 24;
+                    
+                    CTX.fillStyle = '#6a6a5a';
+                    CTX.beginPath();
+                    CTX.ellipse(sx, sy, 9, 11, 0, 0, Math.PI * 2);
+                    CTX.fill();
+                    
+                    CTX.fillStyle = '#1a1a1a';
+                    CTX.fillRect(sx - 3, sy - 2, 2, 4);
+                    CTX.fillRect(sx + 1, sy - 2, 2, 4);
+                    CTX.fillRect(sx - 1, sy + 3, 2, 2);
+                    
+                    CTX.fillStyle = '#5a5a4a';
+                    CTX.fillRect(sx + 12, sy + 4, 18, 3);
+                    CTX.fillRect(sx + 12, sy + 4, 3, 3);
+                    CTX.fillRect(sx + 27, sy + 4, 3, 3);
+                    CTX.fillRect(sx - 15, sy + 6, 12, 2);
+                }
+                
+                // Fog
+                const fogGradient1 = CTX.createLinearGradient(0, GROUND - 120, 0, GROUND);
+                fogGradient1.addColorStop(0, 'rgba(20, 15, 25, 0)');
+                fogGradient1.addColorStop(0.5, 'rgba(20, 15, 25, 0.15)');
+                fogGradient1.addColorStop(1, 'rgba(20, 15, 25, 0.35)');
+                CTX.fillStyle = fogGradient1;
+                CTX.fillRect(0, GROUND - 120, CANVAS.width, 120);
+                
             } else {
+                // Level 3 - Boss level
                 CTX.fillStyle = '#0f0510';
                 CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
                 
@@ -1861,7 +2099,7 @@
                                     player.battleAxeUnlocked = true;
                                     player.weapon = 'battleaxe';
                                     updateWeaponUI();
-                                    alert('LEVEL 2!\nBATTLE AXE UNLOCKED!\nPRESS Q TO SWITCH WEAPONS');
+                                    alert('LEVEL 2: ANCIENT RUINS!\nBATTLE AXE UNLOCKED!\nPRESS Q TO SWITCH WEAPONS');
                                 } else {
                                     alert('LEVEL ' + game.level + '!');
                                 }
@@ -1909,7 +2147,7 @@
                                     player.battleAxeUnlocked = true;
                                     player.weapon = 'battleaxe';
                                     updateWeaponUI();
-                                    alert('LEVEL 2!\nBATTLE AXE UNLOCKED!\nPRESS Q TO SWITCH WEAPONS');
+                                    alert('LEVEL 2: ANCIENT RUINS!\nBATTLE AXE UNLOCKED!\nPRESS Q TO SWITCH WEAPONS');
                                 } else {
                                     alert('LEVEL ' + game.level + '!');
                                 }
@@ -1969,11 +2207,13 @@
                 const weapon = weapons[i];
                 weapon.velocityY += weapon.gravity;
                 weapon.y += weapon.velocityY;
-                if (weapon.y > GROUND - 20) {
-                    weapon.y = GROUND - 20;
+                
+                if (weapon.y >= GROUND - 35) {
+                    weapon.y = GROUND - 35;
                     weapon.velocityY = 0;
                 }
-                if (checkCollision(player, {x: weapon.x - 5, y: weapon.y, width: 40, height: 70})) {
+                
+                if (checkCollision(player, {x: weapon.x, y: weapon.y, width: 20, height: 35})) {
                     if (weapon.type === 'potion') {
                         game.potions++;
                     } else if (weapon.type === 'sword') {
@@ -1982,83 +2222,91 @@
                         game.axes++;
                     }
                     weapons.splice(i, 1);
+                    updateUI();
+                }
+                
+                if (weapon.x < -50 || weapon.x > CANVAS.width + 50) {
+                    weapons.splice(i, 1);
                 }
             }
         }
 
-        function updateBloodParticles() {
+        function updateParticles() {
             for (let i = bloodParticles.length - 1; i >= 0; i--) {
                 bloodParticles[i].update();
                 if (bloodParticles[i].isDead()) {
                     bloodParticles.splice(i, 1);
                 }
             }
-        }
-
-        function updatePoofParticles() {
+            
             for (let i = poofParticles.length - 1; i >= 0; i--) {
                 poofParticles[i].update();
                 if (poofParticles[i].isDead()) {
                     poofParticles.splice(i, 1);
                 }
             }
-        }
-
-        function updateBloodRain() {
+            
             if (bloodRainTimer > 0) {
                 bloodRainTimer--;
                 for (let i = bloodRainParticles.length - 1; i >= 0; i--) {
-                    const drop = bloodRainParticles[i];
-                    drop.y += drop.speed;
+                    const rain = bloodRainParticles[i];
+                    rain.y += rain.speed;
                     
-                    if (drop.y > CANVAS.height) {
-                        drop.y = -10;
-                        drop.x = Math.random() * CANVAS.width;
+                    if (rain.y > CANVAS.height) {
+                        rain.y = -10;
+                        rain.x = Math.random() * CANVAS.width;
                     }
                 }
             }
         }
 
-        function update() {
-            if (!game.running || game.paused) return;
+        function gameLoop() {
+            drawBackground();
+            
+            if (!game.started || game.paused || !game.running) {
+                drawScreens();
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+            
             updatePlayer();
             updateOrcs();
             updateWeapons();
-            updateBloodParticles();
-            updatePoofParticles();
-            updateBloodRain();
-            updateUI();
-        }
-
-        function draw() {
-            drawBackground();
+            updateParticles();
             
+            // Draw blood rain effect
             if (bloodRainTimer > 0) {
-                bloodRainParticles.forEach(drop => {
-                    CTX.fillStyle = '#8b0000';
-                    CTX.fillRect(drop.x, drop.y, 2, drop.length);
-                    CTX.fillStyle = '#ff0000';
-                    CTX.fillRect(drop.x, drop.y, 2, 3);
+                CTX.strokeStyle = '#8b0000';
+                CTX.lineWidth = 2;
+                bloodRainParticles.forEach(rain => {
+                    CTX.beginPath();
+                    CTX.moveTo(rain.x, rain.y);
+                    CTX.lineTo(rain.x, rain.y + rain.length);
+                    CTX.stroke();
                 });
             }
             
-            bloodParticles.forEach(particle => particle.draw());
-            poofParticles.forEach(particle => particle.draw());
-            weapons.forEach(drawWeapon);
-            orcs.forEach(drawOrc);
-            ghouls.forEach(drawGhoul);
+            // Draw particles
+            bloodParticles.forEach(p => p.draw());
+            poofParticles.forEach(p => p.draw());
+            
+            // Draw game objects
+            orcs.forEach(orc => drawOrc(orc));
+            ghouls.forEach(ghoul => drawGhoul(ghoul));
+            weapons.forEach(weapon => drawWeapon(weapon));
             drawDemonBoss();
             drawPlayer();
+            
+            updateUI();
             drawScreens();
-        }
-
-        function gameLoop() {
-            update();
-            draw();
+            
             requestAnimationFrame(gameLoop);
         }
 
+        // Initialize mobile controls
         setupMobileControls();
+        
+        // Start the game loop
         gameLoop();
     </script>
 </body>
