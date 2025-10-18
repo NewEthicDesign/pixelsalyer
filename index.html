@@ -36,6 +36,7 @@
                 0 0 20px rgba(255, 0, 0, 0.5);
             letter-spacing: 4px;
             animation: titlePulse 2s ease-in-out infinite;
+            white-space: nowrap;
         }
 
         @keyframes titlePulse {
@@ -167,7 +168,10 @@
         }
 
         @media (max-width: 850px) {
-            h1 { font-size: 32px; }
+            h1 { 
+                font-size: 28px;
+                letter-spacing: 2px;
+            }
             #ui { font-size: 10px; }
             .stat { padding: 8px 12px; }
             #mobileControls { display: flex; }
@@ -176,8 +180,9 @@
 
         @media (max-width: 600px) {
             h1 { 
-                font-size: 24px;
+                font-size: 22px;
                 margin-bottom: 10px;
+                letter-spacing: 1px;
             }
             #gameCanvas {
                 border: 4px solid #8b0000;
@@ -199,8 +204,8 @@
 
         @media (max-width: 400px) {
             h1 { 
-                font-size: 20px;
-                letter-spacing: 2px;
+                font-size: 18px;
+                letter-spacing: 1px;
             }
             .dpad {
                 grid-template-columns: repeat(3, 50px);
@@ -322,7 +327,8 @@
             active: false,
             x: 0, y: 0, width: 100, height: 120,
             speed: 1.5, health: 3, maxHealth: 3,
-            attackCooldown: 0, walkFrame: 0
+            attackCooldown: 0, walkFrame: 0,
+            hitCooldown: 0
         };
 
         const bloodRainParticles = [];
@@ -633,7 +639,7 @@
 
         function spawnOrc() {
             const sizeMultiplier = 1 + (game.level - 1) * 0.25;
-            const health = game.level === 3 ? 3 : 2;
+            const health = game.level === 3 ? 3 : 1;  // Level 3 orcs have 3 health, levels 1-2 have 1 health
             orcs.push({
                 x: CANVAS.width + 50,
                 y: GROUND - (40 * sizeMultiplier),
@@ -643,7 +649,8 @@
                 health: health,
                 maxHealth: health,
                 level: game.level,
-                walkFrame: 0
+                walkFrame: 0,
+                hitCooldown: 0
             });
         }
 
@@ -659,7 +666,8 @@
                 maxHealth: 2,
                 level: game.level,
                 floatFrame: Math.random() * Math.PI * 2,
-                opacity: 0.7 + Math.random() * 0.3
+                opacity: 0.7 + Math.random() * 0.3,
+                hitCooldown: 0
             });
         }
 
@@ -709,6 +717,7 @@
             boss.health = boss.maxHealth;
             boss.attackCooldown = 0;
             boss.walkFrame = 0;
+            boss.hitCooldown = 0;
             game.bossSpawned = true;
         }
 
@@ -2073,6 +2082,12 @@
             for (let i = orcs.length - 1; i >= 0; i--) {
                 const orc = orcs[i];
                 orc.x -= orc.speed;
+                
+                // Decrease hit cooldown
+                if (orc.hitCooldown > 0) {
+                    orc.hitCooldown--;
+                }
+                
                 if (checkCollision(player, orc)) {
                     game.health -= 0.5;
                     if (game.health <= 0) {
@@ -2081,8 +2096,9 @@
                         stopMusic();
                     }
                 }
-                if (player.attacking && checkCollision(getAttackBox(), orc)) {
+                if (player.attacking && orc.hitCooldown === 0 && checkCollision(getAttackBox(), orc)) {
                     orc.health--;
+                    orc.hitCooldown = 20; // Cooldown before next hit
                     createBloodSplatter(orc.x + orc.width / 2, orc.y + orc.height / 2);
                     if (orc.health <= 0) {
                         game.score++;
@@ -2119,6 +2135,11 @@
                 const ghoul = ghouls[i];
                 ghoul.x -= ghoul.speed;
                 
+                // Decrease hit cooldown
+                if (ghoul.hitCooldown > 0) {
+                    ghoul.hitCooldown--;
+                }
+                
                 if (checkCollision(player, {x: ghoul.x, y: ghoul.y, width: ghoul.width, height: ghoul.height})) {
                     game.health -= 0.4;
                     if (game.health <= 0) {
@@ -2128,8 +2149,9 @@
                     }
                 }
                 
-                if (player.attacking && checkCollision(getAttackBox(), {x: ghoul.x, y: ghoul.y, width: ghoul.width, height: ghoul.height})) {
+                if (player.attacking && ghoul.hitCooldown === 0 && checkCollision(getAttackBox(), {x: ghoul.x, y: ghoul.y, width: ghoul.width, height: ghoul.height})) {
                     ghoul.health--;
+                    ghoul.hitCooldown = 20; // Cooldown before next hit
                     createPoofEffect(ghoul.x + ghoul.width / 2, ghoul.y + ghoul.height / 2);
                     
                     if (ghoul.health <= 0) {
@@ -2171,6 +2193,11 @@
                     boss.x = CANVAS.width / 3;
                 }
                 
+                // Decrease hit cooldown
+                if (boss.hitCooldown > 0) {
+                    boss.hitCooldown--;
+                }
+                
                 if (checkCollision(player, {x: boss.x + 15, y: boss.y + 20, width: 50, height: 80})) {
                     game.health -= 1;
                     if (game.health <= 0) {
@@ -2180,8 +2207,10 @@
                     }
                 }
                 
-                if (player.attacking && checkCollision(getAttackBox(), {x: boss.x + 15, y: boss.y + 20, width: 50, height: 80})) {
+                // Only allow one hit per attack - check cooldown
+                if (player.attacking && boss.hitCooldown === 0 && checkCollision(getAttackBox(), {x: boss.x + 15, y: boss.y + 20, width: 50, height: 80})) {
                     boss.health--;
+                    boss.hitCooldown = 20; // Cooldown frames before boss can be hit again
                     createBloodSplatter(boss.x + boss.width / 2, boss.y + 50);
                     createBloodSplatter(boss.x + boss.width / 2 + 10, boss.y + 60);
                     createBloodSplatter(boss.x + boss.width / 2 - 10, boss.y + 40);
