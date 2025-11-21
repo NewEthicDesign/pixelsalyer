@@ -1,8 +1,8 @@
-\\ PIXEL SLAYER //
+PIXEL SLAYER
 A lightweight, fast-paced browser game built with HTML5, CSS, and JavaScript.  
 Play instantly here: **https://newethicdesign.github.io/pixelsalyer/**
 
-Pixel Slayer is an open-source arcade-style action game where you fight waves of enemies, survive as long as possible, and rack up high scores. The project is free for anyone to download, modify, study, or contribute to.
+PIXEL SLAYER is an open-source arcade-style action game where you fight waves of enemies, survive as long as possible, and rack up high scores. The project is free for anyone to download, modify, study, or contribute to.
 
 ### Gameplay Overview
 
